@@ -522,6 +522,53 @@ intel_miptree_choose_tiling(struct brw_context *brw,
    return I915_TILING_Y | I915_TILING_X;
 }
 
+static void
+intel_miptree_total_width_height(struct brw_context *brw,
+                                 struct intel_mipmap_tree *mt)
+{
+   switch (mt->target) {
+   case GL_TEXTURE_CUBE_MAP:
+      if (brw->gen == 4) {
+         /* Gen4 stores cube maps as 3D textures. */
+         assert(mt->physical_depth0 == 6);
+         brw_miptree_layout_texture_3d(brw, mt);
+      } else {
+         /* All other hardware stores cube maps as 2D arrays. */
+	 brw_miptree_layout_texture_array(brw, mt);
+      }
+      break;
+
+   case GL_TEXTURE_3D:
+      if (brw->gen >= 9)
+         brw_miptree_layout_texture_array(brw, mt);
+      else
+         brw_miptree_layout_texture_3d(brw, mt);
+      break;
+
+   case GL_TEXTURE_1D_ARRAY:
+   case GL_TEXTURE_2D_ARRAY:
+   case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+   case GL_TEXTURE_CUBE_MAP_ARRAY:
+      brw_miptree_layout_texture_array(brw, mt);
+      break;
+
+   default:
+      switch (mt->msaa_layout) {
+      case INTEL_MSAA_LAYOUT_UMS:
+      case INTEL_MSAA_LAYOUT_CMS:
+         brw_miptree_layout_texture_array(brw, mt);
+         break;
+      case INTEL_MSAA_LAYOUT_NONE:
+      case INTEL_MSAA_LAYOUT_IMS:
+         if (use_linear_1d_layout(brw, mt))
+            gen9_miptree_layout_1d(mt);
+         else
+            brw_miptree_layout_2d(mt);
+         break;
+      }
+      break;
+   }
+}
 
 void
 brw_miptree_layout(struct brw_context *brw,
@@ -569,48 +616,8 @@ brw_miptree_layout(struct brw_context *brw,
          intel_vertical_texture_alignment_unit(brw, mt->format, multisampled);
    }
 
-   switch (mt->target) {
-   case GL_TEXTURE_CUBE_MAP:
-      if (brw->gen == 4) {
-         /* Gen4 stores cube maps as 3D textures. */
-         assert(mt->physical_depth0 == 6);
-         brw_miptree_layout_texture_3d(brw, mt);
-      } else {
-         /* All other hardware stores cube maps as 2D arrays. */
-	 brw_miptree_layout_texture_array(brw, mt);
-      }
-      break;
+   intel_miptree_total_width_height(brw, mt);
 
-   case GL_TEXTURE_3D:
-      if (brw->gen >= 9)
-         brw_miptree_layout_texture_array(brw, mt);
-      else
-         brw_miptree_layout_texture_3d(brw, mt);
-      break;
-
-   case GL_TEXTURE_1D_ARRAY:
-   case GL_TEXTURE_2D_ARRAY:
-   case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
-   case GL_TEXTURE_CUBE_MAP_ARRAY:
-      brw_miptree_layout_texture_array(brw, mt);
-      break;
-
-   default:
-      switch (mt->msaa_layout) {
-      case INTEL_MSAA_LAYOUT_UMS:
-      case INTEL_MSAA_LAYOUT_CMS:
-         brw_miptree_layout_texture_array(brw, mt);
-         break;
-      case INTEL_MSAA_LAYOUT_NONE:
-      case INTEL_MSAA_LAYOUT_IMS:
-         if (use_linear_1d_layout(brw, mt))
-            gen9_miptree_layout_1d(mt);
-         else
-            brw_miptree_layout_2d(mt);
-         break;
-      }
-      break;
-   }
    DBG("%s: %dx%dx%d\n", __FUNCTION__,
        mt->total_width, mt->total_height, mt->cpp);
 
