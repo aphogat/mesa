@@ -521,6 +521,7 @@ intel_miptree_create_layout(struct brw_context *brw,
                             GLuint depth0,
                             bool for_bo,
                             GLuint num_samples,
+                            enum intel_miptree_tiling_mode requested,
                             bool force_all_slices_at_each_lod);
 
 struct intel_mipmap_tree *
@@ -718,8 +719,14 @@ void
 intel_miptree_updownsample(struct brw_context *brw,
                            struct intel_mipmap_tree *src,
                            struct intel_mipmap_tree *dst);
-
-void brw_miptree_layout(struct brw_context *brw, struct intel_mipmap_tree *mt);
+void
+brw_miptree_layout(struct brw_context *brw,
+                   mesa_format format,
+                   uint32_t width0,
+                   uint32_t num_samples,
+                   bool for_bo,
+                   enum intel_miptree_tiling_mode requested,
+                   struct intel_mipmap_tree *mt);
 
 void *intel_miptree_map_raw(struct brw_context *brw,
                             struct intel_mipmap_tree *mt);
@@ -745,6 +752,14 @@ intel_miptree_unmap(struct brw_context *brw,
 		    struct intel_mipmap_tree *mt,
 		    unsigned int level,
 		    unsigned int slice);
+
+uint32_t
+intel_miptree_choose_tiling(struct brw_context *brw,
+                            mesa_format format,
+                            uint32_t width0,
+                            uint32_t num_samples,
+                            enum intel_miptree_tiling_mode requested,
+                            struct intel_mipmap_tree *mt);
 
 void
 intel_hiz_exec(struct brw_context *brw, struct intel_mipmap_tree *mt,

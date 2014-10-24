@@ -419,7 +419,13 @@ brw_miptree_layout_texture_3d(struct brw_context *brw,
 }
 
 void
-brw_miptree_layout(struct brw_context *brw, struct intel_mipmap_tree *mt)
+brw_miptree_layout(struct brw_context *brw,
+                   mesa_format format,
+                   uint32_t width0,
+                   uint32_t num_samples,
+                   bool for_bo,
+                   enum intel_miptree_tiling_mode requested,
+                   struct intel_mipmap_tree *mt)
 {
    bool multisampled = mt->num_samples > 1;
    bool gen6_hiz_or_stencil = false;
@@ -502,5 +508,10 @@ brw_miptree_layout(struct brw_context *brw, struct intel_mipmap_tree *mt)
    }
    DBG("%s: %dx%dx%d\n", __FUNCTION__,
        mt->total_width, mt->total_height, mt->cpp);
+
+   if (!for_bo)
+      mt->tiling = intel_miptree_choose_tiling(brw, format, width0,
+                                               num_samples,
+                                               requested, mt);
 }
 

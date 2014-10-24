@@ -232,6 +232,7 @@ intel_miptree_create_layout(struct brw_context *brw,
                             GLuint depth0,
                             bool for_bo,
                             GLuint num_samples,
+                            enum intel_miptree_tiling_mode requested,
                             bool force_all_slices_at_each_lod)
 {
    struct intel_mipmap_tree *mt = calloc(sizeof(*mt), 1);
@@ -432,7 +433,7 @@ intel_miptree_create_layout(struct brw_context *brw,
    if (force_all_slices_at_each_lod)
       mt->array_layout = ALL_SLICES_AT_EACH_LOD;
 
-   brw_miptree_layout(brw, mt);
+   brw_miptree_layout(brw, format, width0, num_samples, for_bo, requested, mt);
 
    return mt;
 }
@@ -440,7 +441,7 @@ intel_miptree_create_layout(struct brw_context *brw,
 /**
  * \brief Helper function for intel_miptree_create().
  */
-static uint32_t
+uint32_t
 intel_miptree_choose_tiling(struct brw_context *brw,
                             mesa_format format,
                             uint32_t width0,
@@ -609,6 +610,7 @@ intel_miptree_create(struct brw_context *brw,
 				      first_level, last_level, width0,
 				      height0, depth0,
                                     false, num_samples,
+                                    requested_tiling,
                                     force_all_slices_at_each_lod);
    /*
     * pitch == 0 || height == 0  indicates the null texture
@@ -627,16 +629,11 @@ intel_miptree_create(struct brw_context *brw,
       total_height = ALIGN(total_height, 64);
    }
 
-   uint32_t tiling = intel_miptree_choose_tiling(brw, format, width0,
-                                                 num_samples, requested_tiling,
-                                                 mt);
    bool y_or_x = false;
 
-   if (tiling == (I915_TILING_Y | I915_TILING_X)) {
+   if (mt->tiling == (I915_TILING_Y | I915_TILING_X)) {
       y_or_x = true;
       mt->tiling = I915_TILING_Y;
-   } else {
-      mt->tiling = tiling;
    }
 
    unsigned long pitch;
@@ -721,10 +718,18 @@ intel_miptree_create_for_bo(struct brw_context *brw,
 
    target = depth > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 
+   /* 'requested' parameter of intel_miptree_create_layout() is relevant
+    * only for non bo miptree. Tiling for bo is already computed above.
+    * So, the tiling requested below (INTEL_MIPTREE_TILING_NONE) is
+    * irrelevant and will not make any change to the miptree tiling
+    * format.
+    */
    mt = intel_miptree_create_layout(brw, target, format,
                                     0, 0,
                                     width, height, depth,
-                                    true, 0, false);
+                                    true, 0,
+                                    INTEL_MIPTREE_TILING_NONE /*not used*/,
+                                    false);
    if (!mt) {
       free(mt);
       return mt;
