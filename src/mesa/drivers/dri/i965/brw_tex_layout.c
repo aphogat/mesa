@@ -580,6 +580,40 @@ brw_miptree_layout(struct brw_context *brw,
                    struct intel_mipmap_tree *mt)
 {
    bool gen6_hiz_or_stencil = false;
+   const unsigned bpp = _mesa_get_format_bytes(mt->format) * 8;
+
+   /* Check in advance if we can do Y tiling with Yf or Ys tiled resource
+    * modes. Fall back to using I915_TRMODE_NONE. Bits per pixel should be
+    * power of 2 for tr_mode != I915_TRMODE_NONE.
+    */
+   if (brw->gen >= 9 &&
+       !mt->compressed &&
+       _mesa_is_format_color_format(mt->format) &&
+       (requested == INTEL_MIPTREE_TILING_Y ||
+        requested == INTEL_MIPTREE_TILING_ANY) &&
+       (bpp && (bpp & (bpp - 1)) == 0)) {
+      mt->tr_mode = I915_TRMODE_YS;
+      mt->align_w = intel_horizontal_texture_alignment_unit(brw, mt);
+      mt->align_h = intel_vertical_texture_alignment_unit(brw, mt);
+      intel_miptree_total_width_height(brw, mt);
+
+      mt->tiling = intel_miptree_choose_tiling(brw, format, width0,
+                                               num_samples,
+                                               requested, mt);
+      if (mt->tiling == I915_TILING_Y ||
+          mt->tiling == (I915_TILING_Y | I915_TILING_X)) {
+         return;
+      } else {
+         /* Fall back to using I915_TRMODE_NONE after freeing the memeory
+          * allocated for miptree levels in intel_miptree_total_width_height().
+          */
+         unsigned level;
+         for (level = mt->first_level; level <= mt->last_level; level++) {
+            free(mt->level[level].slice);
+            mt->level[level].slice = NULL;
+         }
+      }
+   }
 
    if (brw->gen == 6 && mt->array_layout == ALL_SLICES_AT_EACH_LOD) {
       const GLenum base_format = _mesa_get_format_base_format(mt->format);
@@ -610,6 +644,7 @@ brw_miptree_layout(struct brw_context *brw,
          mt->align_h = 32;
       }
    } else {
+      mt->tr_mode = I915_TRMODE_NONE;
       mt->align_w =  intel_horizontal_texture_alignment_unit(brw, mt);
       mt->align_h = intel_vertical_texture_alignment_unit(brw, mt);
    }

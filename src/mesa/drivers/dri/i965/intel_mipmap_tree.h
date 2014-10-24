@@ -315,6 +315,7 @@ struct intel_mipmap_tree
    uint32_t pitch; /**< pitch in bytes. */
 
    uint32_t tiling; /**< One of the I915_TILING_* flags */
+   uint32_t tr_mode; /**< One of the I915_TRMODE_* flags */
 
    /* Effectively the key:
     */
