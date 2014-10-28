@@ -214,9 +214,19 @@ gen8_update_texture_surface(struct gl_context *ctx,
 
    surf[0] = translate_tex_target(tObj->Target) << BRW_SURFACE_TYPE_SHIFT |
              tex_format << BRW_SURFACE_FORMAT_SHIFT |
-             vertical_alignment(mt) |
-             horizontal_alignment(mt) |
              tiling_mode;
+
+   /* Horizontal alignment is ignored when Tiled Resource Mode is not
+    * TRMODE_NONE. Vertical alignment is ignored for 1D surfaces and when
+    * Tiled Resource Mode is not TRMODE_NONE.
+    */
+   if (tr_mode == GEN9_SURFACE_TRMODE_NONE) {
+      if(!gen9_use_linear_1d_layout(brw, mt))
+         surf[0] |=  horizontal_alignment(mt);
+      if (tObj->Target != GL_TEXTURE_1D &&
+          tObj->Target != GL_TEXTURE_1D_ARRAY)
+         surf[0] |=  vertical_alignment(mt);
+   }
 
    if (tObj->Target == GL_TEXTURE_CUBE_MAP ||
        tObj->Target == GL_TEXTURE_CUBE_MAP_ARRAY) {
@@ -397,9 +407,14 @@ gen8_update_renderbuffer_surface(struct brw_context *brw,
    surf[0] = (surf_type << BRW_SURFACE_TYPE_SHIFT) |
              (is_array ? GEN7_SURFACE_IS_ARRAY : 0) |
              (format << BRW_SURFACE_FORMAT_SHIFT) |
-             vertical_alignment(mt) |
-             horizontal_alignment(mt) |
              surface_tiling_mode(tiling);
+
+   /* Horizontal alignment is ignored when Tiled Resource Mode is not
+    * TRMODE_NONE. Vertical alignment is ignored for 1D surfaces and when
+    * Tiled Resource Mode is not TRMODE_NONE.
+    */
+   if (tr_mode == GEN9_SURFACE_TRMODE_NONE && surf_type != BRW_SURFACE_1D)
+      surf[0] |=  horizontal_alignment(mt) | vertical_alignment(mt);
 
    surf[1] = SET_FIELD(mocs, GEN8_SURFACE_MOCS) | mt->qpitch >> 2;
 
