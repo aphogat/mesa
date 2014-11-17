@@ -43,6 +43,23 @@
 
 #define FILE_DEBUG_FLAG DEBUG_BLIT
 
+#define SET_TILING_XY_FAST_COPY_BLT(tiling, tr_mode, type)           \
+({                                                                   \
+   switch (tiling) {                                                 \
+   case I915_TILING_X:                                               \
+      CMD |= type ## _TILED_X;                                       \
+      break;                                                         \
+   case I915_TILING_Y:                                               \
+      if (tr_mode == I915_TRMODE_64K)                                \
+         CMD |= type ## _TILED_64K;                                  \
+      else                                                           \
+         CMD |= type ## _TILED_Y;                                    \
+      break;                                                         \
+   default:                                                          \
+      unreachable("not reached");                                    \
+   }                                                                 \
+})
+
 static void
 intel_miptree_set_alpha_to_one(struct brw_context *brw,
                                struct intel_mipmap_tree *mt,
@@ -75,6 +92,12 @@ static uint32_t
 br13_for_cpp(int cpp)
 {
    switch (cpp) {
+   case 16:
+      return BR13_32323232;
+      break;
+   case 8:
+      return BR13_16161616;
+      break;
    case 4:
       return BR13_8888;
       break;
@@ -87,6 +110,138 @@ br13_for_cpp(int cpp)
    default:
       unreachable("not reached");
    }
+}
+
+static uint32_t
+get_tr_horizontal_align(uint32_t tr_mode, uint32_t cpp, bool is_src) {
+   const uint32_t align_2d_yf[] = {64, 64, 32, 32, 16};
+   const uint32_t align_2d_ys[] = {256, 256, 128, 128, 64};
+   const uint32_t bpp = cpp * 8;
+   uint32_t align;
+   int i = 0;
+
+   if (tr_mode == I915_TRMODE_NONE)
+      return 0;
+
+   /* Compute array index. */
+   assert((bpp & (bpp - 1)) == 0);
+   while (bpp >> (i + 1))
+      i++;
+   i -= 3;
+   assert(i >= 0);
+
+   if (tr_mode == I915_TRMODE_YF)
+      align = align_2d_yf[i];
+   else
+      align = align_2d_ys[i];
+
+   switch(align) {
+   case 512:
+      return is_src ? XY_SRC_H_ALIGN_512 : XY_DST_H_ALIGN_512;
+   case 256:
+      return is_src ? XY_SRC_H_ALIGN_256 : XY_DST_H_ALIGN_256;
+   case 128:
+      return is_src ? XY_SRC_H_ALIGN_128 : XY_DST_H_ALIGN_128;
+   case 64:
+      return is_src ? XY_SRC_H_ALIGN_64 : XY_DST_H_ALIGN_64;
+   case 32:
+      return is_src ? XY_SRC_H_ALIGN_32 : XY_DST_H_ALIGN_32;
+   case 16:
+      return is_src ? XY_SRC_H_ALIGN_16 : XY_DST_H_ALIGN_16;
+   default:
+      unreachable("not reached");
+   }
+}
+
+static uint32_t
+get_tr_vertical_align(uint32_t tr_mode, uint32_t cpp, bool is_src) {
+/* Vertical alignment tables for TRMODE_YF and TRMODE_YS. */
+   const unsigned align_2d_yf[] = {64, 32, 32, 16, 16};
+   const unsigned align_2d_ys[] = {256, 128, 128, 64, 64};
+   const uint32_t bpp = cpp * 8;
+   uint32_t align;
+   int i = 0;
+
+   if (tr_mode == I915_TRMODE_NONE)
+      return 0;
+
+   /* Compute array index. */
+   assert((bpp & (bpp - 1)) == 0);
+   while (bpp >> (i + 1))
+      i++;
+   i -= 3;
+   assert(i >= 0);
+
+   if (tr_mode == I915_TRMODE_YF)
+      align = align_2d_yf[i];
+   else
+      align = align_2d_ys[i];
+
+   switch(align) {
+   case 256:
+      return is_src ? XY_SRC_V_ALIGN_256 : XY_DST_V_ALIGN_256;
+   case 128:
+      return is_src ? XY_SRC_V_ALIGN_128 : XY_DST_V_ALIGN_128;
+   case 64:
+      return is_src ? XY_SRC_V_ALIGN_64 : XY_DST_V_ALIGN_64;
+   case 32:
+      return is_src ? XY_SRC_V_ALIGN_32 : XY_DST_V_ALIGN_32;
+   case 16:
+      return is_src ? XY_SRC_V_ALIGN_16 : XY_DST_V_ALIGN_16;
+   default:
+      unreachable("not reached");
+   }
+}
+
+static bool
+fast_copy_blit_error_check(uintptr_t src_addr, uint32_t src_pitch,
+                           uint32_t src_tiling, uintptr_t dst_addr,
+                           uint32_t dst_pitch, uint32_t dst_tiling,
+                           uint32_t cpp)
+{
+   /* When destination tiling is enabled, this address is 64Byte aligned. */
+   if (dst_tiling != I915_TILING_NONE) {
+      if (dst_addr & 63)
+         return false;
+   }
+
+   /* When source tiling is enabled, this address should be 4 KB aligned. */
+   if (src_tiling != I915_TILING_NONE) {
+      if (src_addr & 4095)
+         return false;
+   }
+
+   /* When either source or destination tiling is enabled, this address is
+    * 16-byte aligned.
+    */
+   if (src_tiling != I915_TILING_NONE ||
+       dst_tiling != I915_TILING_NONE) {
+      if (src_addr & 15)
+         return false;
+   }
+
+   assert(cpp <= 16);
+   /* For Fast Copy Blits the pitch cannot be a negative number. */
+   assert(dst_pitch >= 0);
+
+   /* For Linear surfaces, the pitch has to be an OWord (16byte) multiple. */
+   if ((src_tiling == I915_TILING_NONE &&
+        src_pitch % 16 != 0) ||
+       (dst_tiling == I915_TILING_NONE &&
+        dst_pitch % 16 != 0))
+      return false;
+
+   /* For Tiled surfaces, the pitch has to be a multiple of the Tile width
+    * (X direction width of the Tile). This means the pitch value will
+    * always be Cache Line aligned (64byte multiple).
+    */
+   if ((dst_tiling != I915_TILING_NONE &&
+        dst_pitch % 64 != 0) ||
+       (src_tiling != I915_TILING_NONE &&
+        src_pitch % 64 != 0))
+      return false;
+
+   return true;
 }
 
 /**
@@ -156,6 +311,7 @@ intel_miptree_blit(struct brw_context *brw,
                    uint32_t width, uint32_t height,
                    GLenum logicop)
 {
+   bool overlap = false;
    /* The blitter doesn't understand multisampling at all. */
    if (src_mt->num_samples > 0 || dst_mt->num_samples > 0)
       return false;
@@ -216,6 +372,12 @@ intel_miptree_blit(struct brw_context *brw,
    intel_miptree_resolve_color(brw, src_mt);
    intel_miptree_resolve_color(brw, dst_mt);
 
+   /* Check for an overlap for SKL+ platforms. */
+   if (brw->gen >= 9 &&
+       ((src_x < dst_x && (src_x + width) > dst_x) ||
+        (src_x > dst_x && (dst_x + width) > src_x)))
+         overlap = true;
+
    if (src_flip)
       src_y = minify(src_mt->physical_height0, src_level - src_mt->first_level) - src_y - height;
 
@@ -251,12 +413,15 @@ intel_miptree_blit(struct brw_context *brw,
                           src_pitch,
                           src_mt->bo, src_mt->offset,
                           src_mt->tiling,
+                          src_mt->tr_mode,
                           dst_mt->pitch,
                           dst_mt->bo, dst_mt->offset,
                           dst_mt->tiling,
+                          dst_mt->tr_mode,
                           src_x, src_y,
                           dst_x, dst_y,
                           width, height,
+                          overlap,
                           logicop)) {
       return false;
    }
@@ -280,13 +445,16 @@ intelEmitCopyBlit(struct brw_context *brw,
 		  drm_intel_bo *src_buffer,
 		  GLuint src_offset,
 		  uint32_t src_tiling,
+		  uint32_t src_tr_mode,
 		  GLshort dst_pitch,
 		  drm_intel_bo *dst_buffer,
 		  GLuint dst_offset,
 		  uint32_t dst_tiling,
+		  uint32_t dst_tr_mode,
 		  GLshort src_x, GLshort src_y,
 		  GLshort dst_x, GLshort dst_y,
 		  GLshort w, GLshort h,
+		  bool overlap,
 		  GLenum logic_op)
 {
    GLuint CMD, BR13, pass = 0;
@@ -295,15 +463,8 @@ intelEmitCopyBlit(struct brw_context *brw,
    drm_intel_bo *aper_array[3];
    bool dst_y_tiled = dst_tiling == I915_TILING_Y;
    bool src_y_tiled = src_tiling == I915_TILING_Y;
+   bool use_fast_copy_blit = brw->gen >= 9 && !overlap;
 
-   if (dst_tiling != I915_TILING_NONE) {
-      if (dst_offset & 4095)
-	 return false;
-   }
-   if (src_tiling != I915_TILING_NONE) {
-      if (src_offset & 4095)
-	 return false;
-   }
    if ((dst_y_tiled || src_y_tiled) && brw->gen < 6)
       return false;
 
@@ -334,13 +495,6 @@ intelEmitCopyBlit(struct brw_context *brw,
        src_buffer, src_pitch, src_offset, src_x, src_y,
        dst_buffer, dst_pitch, dst_offset, dst_x, dst_y, w, h);
 
-   /* Blit pitch must be dword-aligned.  Otherwise, the hardware appears to drop
-    * the low bits.  Offsets must be naturally aligned.
-    */
-   if (src_pitch % 4 != 0 || src_offset % cpp != 0 ||
-       dst_pitch % 4 != 0 || dst_offset % cpp != 0)
-      return false;
-
    /* For big formats (such as floating point), do the copy using 16 or 32bpp
     * and multiply the coordinates.
     */
@@ -359,27 +513,76 @@ intelEmitCopyBlit(struct brw_context *brw,
       }
    }
 
-   BR13 = br13_for_cpp(cpp) | translate_raster_op(logic_op) << 16;
+   if (use_fast_copy_blit &&
+       fast_copy_blit_error_check(src_offset, src_pitch, src_tiling,
+                                  dst_offset, dst_pitch, dst_tiling, cpp)) {
+      BR13 = br13_for_cpp(cpp);
 
-   switch (cpp) {
-   case 1:
-   case 2:
-      CMD = XY_SRC_COPY_BLT_CMD;
-      break;
-   case 4:
-      CMD = XY_SRC_COPY_BLT_CMD | XY_BLT_WRITE_ALPHA | XY_BLT_WRITE_RGB;
-      break;
-   default:
-      return false;
-   }
+      if (src_tr_mode == I915_TRMODE_YF)
+         BR13 |= XY_SRC_TRMODE_YF;
 
-   if (dst_tiling != I915_TILING_NONE) {
-      CMD |= XY_DST_TILED;
-      dst_pitch /= 4;
-   }
-   if (src_tiling != I915_TILING_NONE) {
-      CMD |= XY_SRC_TILED;
-      src_pitch /= 4;
+      if (dst_tr_mode == I915_TRMODE_YF)
+         BR13 |= XY_DST_TRMODE_YF;
+
+      CMD = XY_FAST_COPY_BLT_CMD;
+
+      if (dst_tiling != I915_TILING_NONE) {
+         SET_TILING_XY_FAST_COPY_BLT(dst_tiling, dst_tr_mode, XY_DST);
+         /* Pitch value should be specified as a number of Dwords. */
+         dst_pitch /= 4;
+      }
+      if (src_tiling != I915_TILING_NONE) {
+         SET_TILING_XY_FAST_COPY_BLT(src_tiling, src_tr_mode, XY_SRC);
+         /* Pitch value should be specified as a number of Dwords. */
+         src_pitch /= 4;
+      }
+
+      CMD |= get_tr_horizontal_align(src_tr_mode, cpp, true /* is_src */);
+      CMD |= get_tr_vertical_align(src_tr_mode, cpp, true /* is_src */);
+
+      CMD |= get_tr_horizontal_align(dst_tr_mode, cpp, false /* is_src */);
+      CMD |= get_tr_vertical_align(dst_tr_mode, cpp, false /* is_src */);
+
+   } else {
+      /* Source and destination base addresses should be 4 KB aligned. */
+      if (dst_tiling != I915_TILING_NONE) {
+         if (dst_offset & 4095)
+            return false;
+      }
+      if (src_tiling != I915_TILING_NONE) {
+         if (src_offset & 4095)
+            return false;
+      }
+
+      /* Blit pitch must be dword-aligned.  Otherwise, the hardware appears to drop
+       * the low bits.  Offsets must be naturally aligned.
+       */
+      if (src_pitch % 4 != 0 || src_offset % cpp != 0 ||
+          dst_pitch % 4 != 0 || dst_offset % cpp != 0)
+         return false;
+
+      assert(cpp <= 4);
+      BR13 = br13_for_cpp(cpp) | translate_raster_op(logic_op) << 16;
+      switch (cpp) {
+      case 1:
+      case 2:
+         CMD = XY_SRC_COPY_BLT_CMD;
+         break;
+      case 4:
+         CMD = XY_SRC_COPY_BLT_CMD | XY_BLT_WRITE_ALPHA | XY_BLT_WRITE_RGB;
+         break;
+      default:
+         return false;
+      }
+
+      if (dst_tiling != I915_TILING_NONE) {
+         CMD |= XY_DST_TILED;
+         dst_pitch /= 4;
+      }
+      if (src_tiling != I915_TILING_NONE) {
+         CMD |= XY_SRC_TILED;
+         src_pitch /= 4;
+      }
    }
 
    if (dst_y2 <= dst_y || dst_x2 <= dst_x) {
@@ -533,11 +736,14 @@ intel_emit_linear_blit(struct brw_context *brw,
    pitch = ROUND_DOWN_TO(MIN2(size, (1 << 15) - 1), 4);
    height = (pitch == 0) ? 1 : size / pitch;
    ok = intelEmitCopyBlit(brw, 1,
-			  pitch, src_bo, src_offset, I915_TILING_NONE,
-			  pitch, dst_bo, dst_offset, I915_TILING_NONE,
+			  pitch, src_bo, src_offset,
+			  I915_TILING_NONE, I915_TRMODE_NONE,
+			  pitch, dst_bo, dst_offset,
+			  I915_TILING_NONE, I915_TRMODE_NONE,
 			  0, 0, /* src x/y */
 			  0, 0, /* dst x/y */
 			  pitch, height, /* w, h */
+			  false, /* overlap */
 			  GL_COPY);
    if (!ok)
       _mesa_problem(ctx, "Failed to linear blit %dx%d\n", pitch, height);
@@ -549,11 +755,14 @@ intel_emit_linear_blit(struct brw_context *brw,
    pitch = ALIGN(size, 4);
    if (size != 0) {
       ok = intelEmitCopyBlit(brw, 1,
-			     pitch, src_bo, src_offset, I915_TILING_NONE,
-			     pitch, dst_bo, dst_offset, I915_TILING_NONE,
+			     pitch, src_bo, src_offset,
+			     I915_TILING_NONE, I915_TRMODE_NONE,
+			     pitch, dst_bo, dst_offset,
+			     I915_TILING_NONE, I915_TRMODE_NONE,
 			     0, 0, /* src x/y */
 			     0, 0, /* dst x/y */
 			     size, 1, /* w, h */
+			     false, /* overlap */
 			     GL_COPY);
       if (!ok)
          _mesa_problem(ctx, "Failed to linear blit %dx%d\n", size, 1);
