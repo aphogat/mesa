@@ -87,6 +87,8 @@
 
 #define XY_SRC_COPY_BLT_CMD             (CMD_2D | (0x53 << 22))
 
+#define XY_FAST_COPY_BLT_CMD             (CMD_2D | (0x42 << 22))
+
 #define XY_TEXT_IMMEDIATE_BLIT_CMD	(CMD_2D | (0x31 << 22))
 # define XY_TEXT_BYTE_PACKED		(1 << 16)
 
@@ -95,11 +97,48 @@
 #define XY_BLT_WRITE_RGB	(1 << 20)
 #define XY_SRC_TILED		(1 << 15)
 #define XY_DST_TILED		(1 << 11)
+#define XY_SRC_TILED_X		(1 << 20)
+#define XY_SRC_TILED_Y		(2 << 20)
+#define XY_SRC_TILED_64K	(3 << 20)
+#define XY_DST_TILED_X		(1 << 13)
+#define XY_DST_TILED_Y		(2 << 13)
+#define XY_DST_TILED_64K	(3 << 13)
+
+#define XY_SRC_H_ALIGN_16       (0 << 17)
+#define XY_SRC_H_ALIGN_32       (0 << 17)
+#define XY_SRC_H_ALIGN_64       (1 << 17)
+#define XY_SRC_H_ALIGN_128      (2 << 17)
+#define XY_SRC_H_ALIGN_256      (3 << 17)
+#define XY_SRC_H_ALIGN_512      (4 << 17)
+
+#define XY_SRC_V_ALIGN_16       (0 << 15)
+#define XY_SRC_V_ALIGN_32       (0 << 15)
+#define XY_SRC_V_ALIGN_64       (0 << 15)
+#define XY_SRC_V_ALIGN_128      (1 << 15)
+#define XY_SRC_V_ALIGN_256      (2 << 15)
+
+#define XY_DST_H_ALIGN_16       (0 << 10)
+#define XY_DST_H_ALIGN_32       (0 << 10)
+#define XY_DST_H_ALIGN_64       (1 << 10)
+#define XY_DST_H_ALIGN_128      (2 << 10)
+#define XY_DST_H_ALIGN_256      (3 << 10)
+#define XY_DST_H_ALIGN_512      (4 << 10)
+
+#define XY_DST_V_ALIGN_16       (0 << 8)
+#define XY_DST_V_ALIGN_32       (0 << 8)
+#define XY_DST_V_ALIGN_64       (0 << 8)
+#define XY_DST_V_ALIGN_128      (1 << 8)
+#define XY_DST_V_ALIGN_256      (2 << 8)
 
 /* BR13 */
 #define BR13_8			(0x0 << 24)
 #define BR13_565		(0x1 << 24)
 #define BR13_8888		(0x3 << 24)
+#define BR13_16161616		(0x4 << 24)
+#define BR13_32323232		(0x5 << 24)
+
+#define XY_SRC_TRMODE_YF        (1 << 31)
+#define XY_DST_TRMODE_YF        (1 << 30)
 
 /* Pipeline Statistics Counter Registers */
 #define IA_VERTICES_COUNT               0x2310
