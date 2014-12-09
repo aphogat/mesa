@@ -534,11 +534,11 @@ intel_miptree_create(struct brw_context *brw,
 
    unsigned long pitch;
    mt->etc_format = etc_format;
-   mt->bo = drm_intel_bo_alloc_tiled(brw->bufmgr, "miptree",
-                                     total_width, total_height, mt->cpp,
-                                     &mt->tiling, &pitch,
-                                     (expect_accelerated_upload ?
-                                      BO_ALLOC_FOR_RENDER : 0));
+   mt->bo = drm_intel_bo_alloc_tr_mode(brw->bufmgr, "miptree",
+                                       total_width, total_height, mt->cpp,
+                                       &mt->tiling, &mt->tr_mode, &pitch,
+                                       (expect_accelerated_upload ?
+                                       BO_ALLOC_FOR_RENDER : 0));
    mt->pitch = pitch;
 
    /* If the BO is too large to fit in the aperture, we need to use the
@@ -552,11 +552,11 @@ intel_miptree_create(struct brw_context *brw,
 
       mt->tiling = I915_TILING_X;
       drm_intel_bo_unreference(mt->bo);
-      mt->bo = drm_intel_bo_alloc_tiled(brw->bufmgr, "miptree",
-                                        total_width, total_height, mt->cpp,
-                                        &mt->tiling, &pitch,
-                                        (expect_accelerated_upload ?
-                                         BO_ALLOC_FOR_RENDER : 0));
+      mt->bo = drm_intel_bo_alloc_tr_mode(brw->bufmgr, "miptree",
+                                          total_width, total_height, mt->cpp,
+                                          &mt->tiling, &mt->tr_mode, &pitch,
+                                          (expect_accelerated_upload ?
+                                          BO_ALLOC_FOR_RENDER : 0));
       mt->pitch = pitch;
    }
 
