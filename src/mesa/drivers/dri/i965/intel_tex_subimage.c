@@ -131,8 +131,11 @@ intel_texsubimage_tiled_memcpy(struct gl_context * ctx,
 
    if (!image->mt ||
        (image->mt->tiling != I915_TILING_X &&
-       image->mt->tiling != I915_TILING_Y)) {
-      /* The algorithm is written only for X- or Y-tiled memory. */
+       image->mt->tiling != I915_TILING_Y) ||
+       image->mt->tr_mode != I915_TRMODE_NONE) {
+      /* The algorithm is written only for X- or Y-tiled memory with
+       * I915_TRMODE_NONE.
+       */
       return false;
    }
 
