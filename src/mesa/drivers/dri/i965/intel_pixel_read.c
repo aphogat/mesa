@@ -221,14 +221,32 @@ intelReadPixels(struct gl_context * ctx,
 
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
+   bool create_pbo = false;
+   uint32_t tr_mode = I915_TRMODE_NONE;
 
    DBG("%s\n", __FUNCTION__);
 
+   if (brw->gen >= 9) {
+      const struct gl_framebuffer *readFb = ctx->ReadBuffer;
+      const int att_index = readFb->_ColorReadBufferIndex;
+      const struct gl_renderbuffer_attachment *readAtt =
+         &readFb->Attachment[att_index];
+      struct gl_renderbuffer *rb = readAtt->Renderbuffer;
+      const struct intel_renderbuffer *irb = intel_renderbuffer(rb);
+      tr_mode = irb->mt->tr_mode;
+      create_pbo = irb->mt->tr_mode != I915_TRMODE_NONE;
+   }
+
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
                                      height, 1, format, type, pixels,
-                                     false /*create_pbo*/,
-                                     true /*for_readpixels*/, pack))
+                                     create_pbo, true /*for_readpixels*/,
+                                     pack))
       return;
+
+   /* Currently there are no fallback paths to read data from surfaces with
+    * tr_mode != I915_TRMODE_NONE.
+    */
+   assert(tr_mode == I915_TRMODE_NONE);
 
    if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __FUNCTION__);
