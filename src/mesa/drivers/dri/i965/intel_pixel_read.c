@@ -92,6 +92,9 @@ intel_readpixels_tiled_memcpy(struct gl_context * ctx,
    uint32_t cpp;
    mem_copy_fn mem_copy = NULL;
 
+   if (irb->mt->tr_mode != I915_TRMODE_NONE)
+      return false;
+
    /* This fastpath is restricted to specific renderbuffer types:
     * a 2D BGRA, RGBA, L8 or A8 texture. It could be generalized to support
     * more types.
