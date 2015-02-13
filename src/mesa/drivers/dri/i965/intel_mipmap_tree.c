@@ -2215,12 +2215,11 @@ use_intel_mipree_map_blit(struct brw_context *brw,
                           unsigned int slice)
 {
    if (brw->has_llc &&
-      /* It's probably not worth swapping to the blit ring because of
-       * all the overhead involved. But, we must use blitter for the
-       * surfaces with tr_mode != TRMODE_NONE.
+      /* On pre-SKL, it's probably not worth swapping to the blit ring
+       * because of all the overhead involved. But, blitter might be
+       * just always faster on SKL+ platforms due to fast copy blit.
        */
-       (!(mode & GL_MAP_WRITE_BIT) ||
-        mt->tr_mode != I915_TRMODE_NONE) &&
+       (!(mode & GL_MAP_WRITE_BIT) || brw->gen >= 9) &&
        !mt->compressed &&
        (mt->tiling == I915_TILING_X ||
         /* Prior to Sandybridge, the blitter can't handle Y tiling */
