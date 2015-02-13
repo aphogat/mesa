@@ -2216,9 +2216,11 @@ use_intel_mipree_map_blit(struct brw_context *brw,
 {
    if (brw->has_llc &&
       /* It's probably not worth swapping to the blit ring because of
-       * all the overhead involved.
+       * all the overhead involved. But, we must use blitter for the
+       * surfaces with tr_mode != TRMODE_NONE.
        */
-       !(mode & GL_MAP_WRITE_BIT) &&
+       (!(mode & GL_MAP_WRITE_BIT) ||
+        mt->tr_mode != I915_TRMODE_NONE) &&
        !mt->compressed &&
        (mt->tiling == I915_TILING_X ||
         /* Prior to Sandybridge, the blitter can't handle Y tiling */
@@ -2289,6 +2291,10 @@ intel_miptree_map(struct brw_context *brw,
       intel_miptree_map_movntdqa(brw, mt, map, level, slice);
 #endif
    } else {
+   /* Currently intel_miptree_map_gtt() doesn't support surfaces with
+    * tr_mode != I915_TRMODE_NONE.
+    */
+      assert(mt->tr_mode == I915_TRMODE_NONE);
       intel_miptree_map_gtt(brw, mt, map, level, slice);
    }
 
