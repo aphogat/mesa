@@ -501,19 +501,24 @@ intel_get_tex_image(struct gl_context *ctx,
                     struct gl_texture_image *texImage) {
    struct brw_context *brw = brw_context(ctx);
    bool ok;
+   bool create_pbo = false;
 
    DBG("%s\n", __FUNCTION__);
 
-   if (_mesa_is_bufferobj(ctx->Pack.BufferObj)) {
-      if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage, 0, 0, 0,
-                                        texImage->Width, texImage->Height,
-                                        texImage->Depth, format, type,
-                                        pixels, false /* create_pbo */,
-                                        false /*for_readpixels*/, &ctx->Pack))
-         return;
-
-      perf_debug("%s: fallback to CPU mapping in PBO case\n", __FUNCTION__);
+   if (brw->gen >= 9) {
+      struct intel_texture_image *intelImage = intel_texture_image(texImage);
+      create_pbo = intelImage->mt->tr_mode != I915_TRMODE_NONE;
    }
+
+   if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage, 0, 0, 0,
+                                     texImage->Width, texImage->Height,
+                                     texImage->Depth, format, type,
+                                     pixels, create_pbo,
+                                     false /*for_readpixels*/, &ctx->Pack))
+      return;
+
+   if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
+      perf_debug("%s: fallback to CPU mapping in PBO case\n", __FUNCTION__);
 
    ok = intel_gettexsubimage_tiled_memcpy(ctx, texImage, 0, 0,
                                           texImage->Width, texImage->Height,
