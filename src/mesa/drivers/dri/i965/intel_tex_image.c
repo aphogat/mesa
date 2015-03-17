@@ -485,7 +485,8 @@ intel_get_tex_image(struct gl_context *ctx,
       if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage, 0, 0, 0,
                                         texImage->Width, texImage->Height,
                                         texImage->Depth, format, type,
-                                        pixels, &ctx->Pack))
+                                        pixels, false /* create_pbo */,
+                                        false /*for_readpixels*/, &ctx->Pack))
          return;
 
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __FUNCTION__);

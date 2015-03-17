@@ -34,6 +34,7 @@
 #include "macros.h"
 #include "meta.h"
 #include "pbo.h"
+#include "readpix.h"
 #include "shaderapi.h"
 #include "state.h"
 #include "teximage.h"
@@ -153,7 +154,8 @@ _mesa_meta_pbo_TexSubImage(struct gl_context *ctx, GLuint dims,
    /* XXX: This should probably be passed in from somewhere */
    const char *where = "_mesa_meta_pbo_TexSubImage";
 
-   if (!_mesa_is_bufferobj(packing->BufferObj) && !create_pbo)
+   if (!_mesa_is_bufferobj(packing->BufferObj) &&
+       (!create_pbo || pixels == NULL))
       return false;
 
    if (format == GL_DEPTH_COMPONENT ||
@@ -268,6 +270,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
                               int xoffset, int yoffset, int zoffset,
                               int width, int height, int depth,
                               GLenum format, GLenum type, const void *pixels,
+                              bool create_pbo, bool for_read_pixels,
                               const struct gl_pixelstore_attrib *packing)
 {
    GLuint pbo = 0, pbo_tex = 0, fbos[2] = { 0, 0 };
@@ -275,12 +278,14 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    struct gl_texture_image *pbo_tex_image;
    GLenum status;
    bool success = false;
+   const bool is_bufferobj = _mesa_is_bufferobj(packing->BufferObj);
+   const bool create_temp_pbo = create_pbo && !is_bufferobj;
    int z;
 
    /* XXX: This should probably be passed in from somewhere */
    const char *where = "_mesa_meta_pbo_GetTexSubImage";
 
-   if (!_mesa_is_bufferobj(packing->BufferObj))
+   if (!is_bufferobj && !create_pbo)
       return false;
 
    if (format == GL_DEPTH_COMPONENT ||
@@ -299,7 +304,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
       return true;
    }
 
-   if (_mesa_check_disallowed_mapping(packing->BufferObj)) {
+   if (is_bufferobj && _mesa_check_disallowed_mapping(packing->BufferObj)) {
       /* buffer is mapped - that's an error */
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(PBO is mapped)", where);
       return true;
@@ -312,12 +317,25 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    image_height = packing->ImageHeight == 0 ? height : packing->ImageHeight;
    full_height = image_height * (depth - 1) + height;
 
-   pbo_tex_image = create_texture_for_pbo(ctx, false, GL_PIXEL_PACK_BUFFER,
-                                          width, full_height * depth,
-                                          format, type, pixels, packing,
+   pbo_tex_image = create_texture_for_pbo(ctx, create_pbo,
+                                          GL_PIXEL_PACK_BUFFER,
+                                          width, full_height,
+                                          is_bufferobj ? format : GL_RGBA,
+                                          is_bufferobj ? type: GL_FLOAT,
+                                          pixels, packing,
                                           &pbo, &pbo_tex);
    if (!pbo_tex_image)
       return false;
+
+   /* Copy the _BaseFormat of tex_image to pbo_tex_image. Depending on the
+    * base format involved we may need to apply a rebase transform later in
+    * _mesa_meta_GetTexImage() (See get_tex_rgba_compressed() and
+    * get_tex_rgba_uncompressed()). For example if we download to a Luminance
+    * format we want G=0 and B=0.
+    */
+   if (tex_image && create_temp_pbo) {
+      pbo_tex_image->_BaseFormat = tex_image->_BaseFormat;
+   }
 
    _mesa_meta_begin(ctx, ~(MESA_META_PIXEL_TRANSFER |
                            MESA_META_PIXEL_STORE));
@@ -379,6 +397,21 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
                                  0, z * image_height,
                                  width, z * image_height + height,
                                  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+   }
+
+   /* If temporary pbo is created in meta to read the pixel/texture data,
+    * now copy that data to client's memory.
+    */
+    if (create_temp_pbo) {
+      if (for_read_pixels) {
+         _mesa_BindFramebuffer(GL_READ_FRAMEBUFFER, fbos[1]);
+         _mesa_update_state(ctx);
+         _mesa_readpixels(ctx, 0, 0, width, height, format, type,
+                          packing, (void *) pixels);
+      } else {
+         _mesa_meta_GetTexImage(ctx, format, type, (GLvoid *) pixels,
+                                pbo_tex_image);
+      }
    }
 
    success = true;

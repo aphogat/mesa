@@ -224,13 +224,14 @@ intelReadPixels(struct gl_context * ctx,
 
    DBG("%s\n", __FUNCTION__);
 
-   if (_mesa_is_bufferobj(pack->BufferObj)) {
-      if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width, height, 1,
-                                        format, type, pixels, pack))
-         return;
+   if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
+                                     height, 1, format, type, pixels,
+                                     false /*create_pbo*/,
+                                     true /*for_readpixels*/, pack))
+      return;
 
+   if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __FUNCTION__);
-   }
 
    ok = intel_readpixels_tiled_memcpy(ctx, x, y, width, height,
                                       format, type, pixels, pack);
