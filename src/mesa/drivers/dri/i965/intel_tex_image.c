@@ -119,18 +119,25 @@ intelTexImage(struct gl_context * ctx,
        */
       create_pbo = tex_busy || (intelImage->mt &&
                    intelImage->mt->tr_mode != I915_TRMODE_NONE);
+      /* Set true for testing only */
+      create_pbo = true;
    } else {
       create_pbo = tex_busy;
    }
 
+   /* TODO: Reduce the number of function parameters passed. Just pass
+    * texImage.
+    */
    ok = _mesa_meta_pbo_TexSubImage(ctx, dims, texImage, 0, 0, 0,
                                    texImage->Width, texImage->Height,
                                    texImage->Depth,
                                    format, type, pixels,
                                    false /*allocate_storage*/,
                                    create_pbo, unpack);
-   if (ok)
+   if (ok) {
+      printf("_mesa_meta_pbo_TexSubImage Success\n");
       return;
+   }
 
    ok = intel_texsubimage_tiled_memcpy(ctx, dims, texImage,
                                        0, 0, 0, /*x,y,z offsets*/
@@ -139,8 +146,10 @@ intelTexImage(struct gl_context * ctx,
                                        texImage->Depth,
                                        format, type, pixels, unpack,
                                        false /*allocate_storage*/);
-   if (ok)
+   if (ok) {
+      printf("intel_texsubimage_tiled_memcpy Success\n");
       return;
+   }
 
    DBG("%s: upload image %dx%dx%d pixels %p\n",
        __FUNCTION__, texImage->Width, texImage->Height, texImage->Depth,
@@ -148,6 +157,7 @@ intelTexImage(struct gl_context * ctx,
 
    _mesa_store_teximage(ctx, dims, texImage,
                         format, type, pixels, unpack);
+   printf("_mesa_store_teximage Success\n");
 }
 
 
@@ -500,6 +510,7 @@ intel_get_tex_image(struct gl_context *ctx,
    if (brw->gen >= 9) {
       struct intel_texture_image *intelImage = intel_texture_image(texImage);
       create_pbo = intelImage->mt->tr_mode != I915_TRMODE_NONE;
+      create_pbo = true; /* Just for testing */
    }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage, 0, 0, 0,

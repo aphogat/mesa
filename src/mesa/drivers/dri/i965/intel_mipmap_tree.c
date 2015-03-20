@@ -601,6 +601,7 @@ intel_miptree_create_for_bo(struct brw_context *brw,
    GLenum target;
 
    drm_intel_bo_get_tiling(bo, &tiling, &swizzle);
+   printf("%s\n", __FUNCTION__);
 
    /* Nothing will be able to use this miptree with the BO if the offset isn't
     * aligned.
@@ -670,6 +671,7 @@ intel_update_winsys_renderbuffer_miptree(struct brw_context *intel,
    assert(_mesa_get_format_base_format(format) == GL_RGB ||
           _mesa_get_format_base_format(format) == GL_RGBA);
 
+   printf("%s =>", __FUNCTION__);
    singlesample_mt = intel_miptree_create_for_bo(intel,
                                                  bo,
                                                  format,
@@ -734,6 +736,7 @@ intel_miptree_create_for_renderbuffer(struct brw_context *brw,
    bool ok;
    GLenum target = num_samples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
+   printf("%s =>\n", __FUNCTION__);
    mt = intel_miptree_create(brw, target, format, 0, 0,
 			     width, height, depth, true, num_samples,
                              INTEL_MIPTREE_TILING_ANY, false);
@@ -2218,6 +2221,7 @@ use_intel_mipree_map_blit(struct brw_context *brw,
       /* On pre-SKL, it's probably not worth swapping to the blit ring
        * because of all the overhead involved. But, blitter might be
        * just always faster on SKL+ platforms due to fast copy blit.
+       * TODO: Update this check based on benchmarking results on SKL.
        */
        (!(mode & GL_MAP_WRITE_BIT) || brw->gen >= 9) &&
        !mt->compressed &&
@@ -2284,6 +2288,7 @@ intel_miptree_map(struct brw_context *brw,
    } else if (mt->stencil_mt && !(mode & BRW_MAP_DIRECT_BIT)) {
       intel_miptree_map_depthstencil(brw, mt, map, level, slice);
    } else if (use_intel_mipree_map_blit(brw, mt, mode, level, slice)) {
+      printf ("%s: using intel_miptree_map_blit()\n", __FUNCTION__);
       intel_miptree_map_blit(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (!(mode & GL_MAP_WRITE_BIT) && !mt->compressed && cpu_has_sse4_1) {
@@ -2292,6 +2297,9 @@ intel_miptree_map(struct brw_context *brw,
    } else {
    /* Currently intel_miptree_map_gtt() doesn't support surfaces with
     * tr_mode != I915_TRMODE_NONE.
+    * TODO: We need another path to handle the formats and types not
+    * supported by _mesa_meta_pbo_TexSubImage() or intel_miptree_map_blit().
+    * or add the missing support in working paths.
     */
       assert(mt->tr_mode == I915_TRMODE_NONE);
       intel_miptree_map_gtt(brw, mt, map, level, slice);

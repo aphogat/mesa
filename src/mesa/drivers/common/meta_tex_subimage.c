@@ -25,6 +25,7 @@
  *    Jason Ekstrand <jason.ekstrand@intel.com>
  */
 
+#include <stdio.h>
 #include "bufferobj.h"
 #include "buffers.h"
 #include "fbobject.h"
@@ -154,6 +155,7 @@ _mesa_meta_pbo_TexSubImage(struct gl_context *ctx, GLuint dims,
    /* XXX: This should probably be passed in from somewhere */
    const char *where = "_mesa_meta_pbo_TexSubImage";
 
+   printf("%s\n", __func__);
    if (!_mesa_is_bufferobj(packing->BufferObj) &&
        (!create_pbo || pixels == NULL))
       return false;
@@ -288,6 +290,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    if (!is_bufferobj && !create_pbo)
       return false;
 
+   printf("%s\n", __func__);
    if (format == GL_DEPTH_COMPONENT ||
        format == GL_DEPTH_STENCIL ||
        format == GL_STENCIL_INDEX ||
@@ -416,6 +419,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
 
    success = true;
 
+   printf("%s Success\n", __func__);
 fail:
    _mesa_DeleteFramebuffers(2, fbos);
    _mesa_DeleteTextures(1, &pbo_tex);

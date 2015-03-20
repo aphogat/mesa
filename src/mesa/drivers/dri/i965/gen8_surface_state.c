@@ -297,6 +297,13 @@ gen8_update_texture_surface(struct gl_context *ctx,
    }
    surf[12] = 0;
 
+   printf("%s: tr_mode = %s, pitch = %d, QPitch = %d, MipTailStartLOD = %d\n",
+          __FUNCTION__,
+          mt->tr_mode == I915_TRMODE_NONE ? "I915_TRMODE_NONE" :
+          (mt->tr_mode == I915_TRMODE_YF ? "I915_TRMODE_YF" : "I915_TRMODE_YS"),
+         pitch - 1, mt->qpitch >> 2, 15);
+
+
    /* Emit relocation to surface contents */
    drm_intel_bo_emit_reloc(brw->batch.bo,
                            *surf_offset + 8 * 4,
@@ -469,6 +476,12 @@ gen8_update_renderbuffer_surface(struct brw_context *brw,
       surf[11] = 0;
    }
    surf[12] = 0;
+
+   printf("%s: tr_mode = %s, pitch = %d, QPitch = %d, MipTailStartLOD = %d\n",
+          __FUNCTION__,
+          mt->tr_mode == I915_TRMODE_NONE ? "I915_TRMODE_NONE" :
+          (mt->tr_mode == I915_TRMODE_YF ? "I915_TRMODE_YF" : "I915_TRMODE_YS"),
+         pitch - 1, mt->qpitch >> 2, 15);
 
    drm_intel_bo_emit_reloc(brw->batch.bo,
                            brw->wm.base.surf_offset[surf_index] + 8 * 4,

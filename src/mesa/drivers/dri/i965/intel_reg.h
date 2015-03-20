@@ -104,6 +104,16 @@
 #define XY_DST_TILED_Y		(2 << 13)
 #define XY_DST_TILED_64K	(3 << 13)
 
+/* TODO: What's the right thing to do for:
+ * XY_SRC_H_ALIGN_16
+ * XY_SRC_V_ALIGN_16
+ * XY_SRC_V_ALIGN_32
+ * XY_DST_H_ALIGN_16
+ * XY_DST_V_ALIGN_16
+ * XY_DST_V_ALIGN_32
+ * BSpec doesn't specify any bits for these alignement values.
+ */
+
 #define XY_SRC_H_ALIGN_16       (0 << 17)
 #define XY_SRC_H_ALIGN_32       (0 << 17)
 #define XY_SRC_H_ALIGN_64       (1 << 17)

@@ -146,6 +146,9 @@ get_tr_horizontal_align(uint32_t tr_mode, uint32_t cpp, bool is_src) {
       return is_src ? XY_SRC_H_ALIGN_64 : XY_DST_H_ALIGN_64;
    case 32:
       return is_src ? XY_SRC_H_ALIGN_32 : XY_DST_H_ALIGN_32;
+   /* TODO: BSpec doesn't say anything about horizontal alignment of 16.
+    * What should we do in that case?
+    */
    case 16:
       return is_src ? XY_SRC_H_ALIGN_16 : XY_DST_H_ALIGN_16;
    default:
@@ -184,6 +187,9 @@ get_tr_vertical_align(uint32_t tr_mode, uint32_t cpp, bool is_src) {
       return is_src ? XY_SRC_V_ALIGN_128 : XY_DST_V_ALIGN_128;
    case 64:
       return is_src ? XY_SRC_V_ALIGN_64 : XY_DST_V_ALIGN_64;
+   /* TODO: BSpec doesn't say anything about vertical alignment of 16 and
+    * 32. What should we do in these cases?
+    */
    case 32:
       return is_src ? XY_SRC_V_ALIGN_32 : XY_DST_V_ALIGN_32;
    case 16:
@@ -224,7 +230,8 @@ fast_copy_blit_error_check(uintptr_t src_addr, uint32_t src_pitch,
    /* For Fast Copy Blits the pitch cannot be a negative number. */
    assert(dst_pitch >= 0);
 
-   /* For Linear surfaces, the pitch has to be an OWord (16byte) multiple. */
+   /* For Linear surfaces, the pitch has to be an OWord (16byte) multiple.
+    */
    if ((src_tiling == I915_TILING_NONE &&
         src_pitch % 16 != 0) ||
        (dst_tiling == I915_TILING_NONE &&
@@ -516,6 +523,7 @@ intelEmitCopyBlit(struct brw_context *brw,
    if (use_fast_copy_blit &&
        fast_copy_blit_error_check(src_offset, src_pitch, src_tiling,
                                   dst_offset, dst_pitch, dst_tiling, cpp)) {
+      printf("%s: XY_FAST_COPY_BLT\n", __FUNCTION__);
       BR13 = br13_for_cpp(cpp);
 
       if (src_tr_mode == I915_TRMODE_YF)
@@ -544,6 +552,7 @@ intelEmitCopyBlit(struct brw_context *brw,
       CMD |= get_tr_vertical_align(dst_tr_mode, cpp, false /* is_src */);
 
    } else {
+      printf("%s: XY_SRC_COPY_BLT\n", __FUNCTION__);
       /* Source and destination base addresses should be 4 KB aligned. */
       if (dst_tiling != I915_TILING_NONE) {
          if (dst_offset & 4095)

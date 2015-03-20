@@ -755,6 +755,9 @@ brw_miptree_layout(struct brw_context *brw,
       mt->tr_mode = I915_TRMODE_YS;
       mt->align_w = intel_horizontal_texture_alignment_unit(brw, mt);
       mt->align_h = intel_vertical_texture_alignment_unit(brw, mt);
+      /* TODO: Do we need to set depth alignment for a 3D surfaces as specified
+       * in Bspec?
+       */
       intel_miptree_total_width_height(brw, mt);
 
       mt->tiling = intel_miptree_choose_tiling(brw, format, width0,
@@ -762,8 +765,16 @@ brw_miptree_layout(struct brw_context *brw,
                                                requested, mt);
       if (mt->tiling == I915_TILING_Y ||
           mt->tiling == (I915_TILING_Y | I915_TILING_X)) {
+         printf("%s: mt->format = %s, bpp = %d, mt->align_w = %d,"
+                "mt->align_h = %d\n", __FUNCTION__,
+                _mesa_get_format_name(mt->format), bpp, mt->align_w,
+                mt->align_h);
+         printf("%s: TR_MODE = %s\n", __FUNCTION__,
+                mt->tr_mode == I915_TRMODE_NONE ? "I915_TRMODE_NONE" :
+                (mt->tr_mode == I915_TRMODE_YF ? "I915_TRMODE_YF" : "I915_TRMODE_YS"));
          return;
       } else {
+         printf("TR_MODE fallback\n");
          /* Fall back to using I915_TRMODE_NONE after freeing the memeory
           * allocated for miptree levels in intel_miptree_total_width_height().
           */
@@ -808,6 +819,14 @@ brw_miptree_layout(struct brw_context *brw,
       mt->align_w =  intel_horizontal_texture_alignment_unit(brw, mt);
       mt->align_h = intel_vertical_texture_alignment_unit(brw, mt);
    }
+
+   printf("%s: mt->format = %s, bpp = %d, mt->align_w = %d,"
+          "mt->align_h = %d\n", __FUNCTION__,
+          _mesa_get_format_name(mt->format), bpp, mt->align_w,
+          mt->align_h);
+   printf("%s: TR_MODE = %s\n", __FUNCTION__,
+          mt->tr_mode == I915_TRMODE_NONE ? "I915_TRMODE_NONE" :
+          (mt->tr_mode == I915_TRMODE_YF ? "I915_TRMODE_YF" : "I915_TRMODE_YS"));
 
    intel_miptree_total_width_height(brw, mt);
 

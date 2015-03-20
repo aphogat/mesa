@@ -224,7 +224,10 @@ intelReadPixels(struct gl_context * ctx,
 
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
-   bool create_pbo = false;
+   /* set true to test on pre-SKL.
+    * TODO: Do we need it for pre-SKL?
+    */
+   bool create_pbo = true;
 
    DBG("%s\n", __FUNCTION__);
 
@@ -236,6 +239,8 @@ intelReadPixels(struct gl_context * ctx,
       struct gl_renderbuffer *rb = readAtt->Renderbuffer;
       const struct intel_renderbuffer *irb = intel_renderbuffer(rb);
       create_pbo = irb->mt->tr_mode != I915_TRMODE_NONE;
+      /* Set true for testing only */
+      create_pbo = true;
    }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
