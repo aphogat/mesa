@@ -558,6 +558,65 @@ intel_lower_compressed_format(struct brw_context *brw, mesa_format format)
    }
 }
 
+/* This function computes Yf/Ys tiled bo size and alignment. */
+static uint64_t
+intel_get_yf_ys_bo_size(struct intel_mipmap_tree *mt, unsigned *alignment)
+{
+   const uint32_t bpp = mt->cpp * 8;
+   const uint32_t aspect_ratio = (bpp == 16 || bpp == 64) ? 2 : 1;
+   uint32_t tile_width, tile_height;
+   const uint64_t min_size = 512 * 1024;
+   const uint64_t max_size = 64 * 1024 * 1024;
+   uint64_t i, stride, size, aligned_y;
+
+   assert(mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE);
+
+   switch (bpp) {
+   case 8:
+      tile_height = 64;
+      break;
+   case 16:
+   case 32:
+      tile_height = 32;
+      break;
+   case 64:
+   case 128:
+      tile_height = 16;
+      break;
+   default:
+      tile_height = 0;
+      printf("Invalid bits per pixel in %s: bpp = %d\n",
+             __FUNCTION__, bpp);
+   }
+
+   if (mt->tr_mode == INTEL_MIPTREE_TRMODE_YS)
+      tile_height *= 4;
+
+   aligned_y = ALIGN(mt->total_height, tile_height);
+
+   stride = mt->total_width * mt->cpp;
+   tile_width = tile_height * mt->cpp * aspect_ratio;
+   stride = ALIGN(stride, tile_width);
+   size = stride * aligned_y;
+
+   if (mt->tr_mode == INTEL_MIPTREE_TRMODE_YF) {
+      *alignment = 4096;
+      size = ALIGN(size, 4096);
+   } else {
+      *alignment = 64 * 1024;
+      size = ALIGN(size, 64 * 1024);
+   }
+
+   if (size > max_size) {
+      mt->tr_mode = INTEL_MIPTREE_TRMODE_NONE;
+      return 0;
+   } else {
+      mt->pitch = stride;
+      for (i = min_size; i < size; i <<= 1)
+         ;
+      return i;
+   }
+}
 
 struct intel_mipmap_tree *
 intel_miptree_create(struct brw_context *brw,
@@ -616,11 +675,27 @@ intel_miptree_create(struct brw_context *brw,
       alloc_flags |= BO_ALLOC_FOR_RENDER;
 
    unsigned long pitch;
-   mt->bo = drm_intel_bo_alloc_tiled(brw->bufmgr, "miptree", total_width,
-                                     total_height, mt->cpp, &mt->tiling,
-                                     &pitch, alloc_flags);
    mt->etc_format = etc_format;
-   mt->pitch = pitch;
+
+   if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE) {
+      unsigned alignment = 0;
+      unsigned long size;
+      size = intel_get_yf_ys_bo_size(mt, &alignment);
+
+      /* intel_get_yf_ys_bo_size() might change the tr_mode. */
+      if (size > 0 && mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE) {
+         mt->bo = drm_intel_bo_alloc_for_render(brw->bufmgr, "miptree",
+                                                size, alignment);
+      }
+   }
+
+   if (mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE) {
+      mt->bo = drm_intel_bo_alloc_tiled(brw->bufmgr, "miptree",
+                                        total_width, total_height, mt->cpp,
+                                        &mt->tiling, &pitch,
+                                        alloc_flags);
+      mt->pitch = pitch;
+   }
 
    /* If the BO is too large to fit in the aperture, we need to use the
     * BLT engine to support it.  Prior to Sandybridge, the BLT paths can't
