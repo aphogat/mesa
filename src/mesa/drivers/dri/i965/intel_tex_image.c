@@ -92,8 +92,10 @@ intelTexImage(struct gl_context * ctx,
               const struct gl_pixelstore_attrib *unpack)
 {
    struct intel_texture_image *intelImage = intel_texture_image(texImage);
+   struct brw_context *brw = brw_context(ctx);
    bool ok;
-
+   bool create_pbo = false;
+   uint32_t tr_mode = INTEL_MIPTREE_TRMODE_NONE;
    bool tex_busy = intelImage->mt && drm_intel_bo_busy(intelImage->mt->bo);
 
    DBG("%s mesa_format %s target %s format %s type %s level %d %dx%dx%d\n",
@@ -110,14 +112,27 @@ intelTexImage(struct gl_context * ctx,
 
    assert(intelImage->mt);
 
+   if (brw->gen >= 9) {
+      tr_mode = intelImage->mt->tr_mode;
+      create_pbo = tex_busy || (intelImage->mt &&
+                   intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE);
+   } else {
+      create_pbo = tex_busy;
+   }
+
    ok = _mesa_meta_pbo_TexSubImage(ctx, dims, texImage, 0, 0, 0,
                                    texImage->Width, texImage->Height,
                                    texImage->Depth,
                                    format, type, pixels,
                                    false /*allocate_storage*/,
-                                   tex_busy, unpack);
+                                   create_pbo, unpack);
    if (ok)
       return;
+
+   /* Currently there are no fallback paths to upload data to surfaces with
+    * tr_mode != INTEL_MIPTREE_TRMODE_NONE.
+    */
+   assert(tr_mode == INTEL_MIPTREE_TRMODE_NONE);
 
    ok = intel_texsubimage_tiled_memcpy(ctx, dims, texImage,
                                        0, 0, 0, /*x,y,z offsets*/
@@ -477,13 +492,21 @@ intel_get_tex_image(struct gl_context *ctx,
                     struct gl_texture_image *texImage) {
    struct brw_context *brw = brw_context(ctx);
    bool ok;
+   bool create_pbo = false;
+   uint32_t tr_mode = INTEL_MIPTREE_TRMODE_NONE;
 
    DBG("%s\n", __func__);
+
+   if (brw->gen >= 9) {
+      struct intel_texture_image *intelImage = intel_texture_image(texImage);
+      tr_mode = intelImage->mt->tr_mode;
+      create_pbo = intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
+   }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage, 0, 0, 0,
                                      texImage->Width, texImage->Height,
                                      texImage->Depth, format, type,
-                                     pixels, false /* create_pbo */,
+                                     pixels, create_pbo,
                                      false /* pbo_uses_src_format_type */,
                                      &ctx->Pack)) {
       /* Flush to guarantee coherency between the render cache and other
@@ -494,6 +517,23 @@ intel_get_tex_image(struct gl_context *ctx,
       intel_batchbuffer_emit_mi_flush(brw);
       return;
    }
+
+   /* Try with pbo using src format and type. */
+   if (brw->gen >= 9 && create_pbo &&
+       _mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage, 0, 0, 0,
+                                     texImage->Width, texImage->Height,
+                                     texImage->Depth, format, type,
+                                     pixels, create_pbo,
+                                     true /* pbo_uses_src_format_type */,
+                                     &ctx->Pack)) {
+      intel_batchbuffer_emit_mi_flush(brw);
+      return;
+   }
+
+   /* Currently there are no fallback paths to read data from surfaces with
+    * tr_mode != INTEL_MIPTREE_TRMODE_NONE.
+    */
+   assert(tr_mode == INTEL_MIPTREE_TRMODE_NONE);
 
    if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __func__);

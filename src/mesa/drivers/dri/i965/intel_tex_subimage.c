@@ -200,8 +200,10 @@ intelTexSubImage(struct gl_context * ctx,
                  const struct gl_pixelstore_attrib *packing)
 {
    struct intel_texture_image *intelImage = intel_texture_image(texImage);
+   struct brw_context *brw = brw_context(ctx);
    bool ok;
-
+   bool create_pbo = false;
+   uint32_t tr_mode = INTEL_MIPTREE_TRMODE_NONE;
    bool tex_busy = intelImage->mt && drm_intel_bo_busy(intelImage->mt->bo);
 
    DBG("%s mesa_format %s target %s format %s type %s level %d %dx%dx%d\n",
@@ -210,12 +212,25 @@ intelTexSubImage(struct gl_context * ctx,
        _mesa_lookup_enum_by_nr(format), _mesa_lookup_enum_by_nr(type),
        texImage->Level, texImage->Width, texImage->Height, texImage->Depth);
 
+   if (brw->gen >= 9) {
+      tr_mode = intelImage->mt->tr_mode;
+      create_pbo = tex_busy || (intelImage->mt &&
+                   intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE);
+   } else {
+      create_pbo = tex_busy;
+   }
+
    ok = _mesa_meta_pbo_TexSubImage(ctx, dims, texImage,
                                    xoffset, yoffset, zoffset,
                                    width, height, depth, format, type,
-                                   pixels, false, tex_busy, packing);
+                                   pixels, false, create_pbo, packing);
    if (ok)
       return;
+
+   /* Currently there are no fallback paths to upload data to surfaces with
+    * tr_mode != INTEL_MIPTREE_TRMODE_NONE.
+    */
+   assert(tr_mode == INTEL_MIPTREE_TRMODE_NONE);
 
    ok = intel_texsubimage_tiled_memcpy(ctx, dims, texImage,
                                        xoffset, yoffset, zoffset,
