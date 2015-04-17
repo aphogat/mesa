@@ -203,7 +203,6 @@ intelTexSubImage(struct gl_context * ctx,
    struct brw_context *brw = brw_context(ctx);
    bool ok;
    bool create_pbo = false;
-   uint32_t tr_mode = INTEL_MIPTREE_TRMODE_NONE;
    bool tex_busy = intelImage->mt && drm_intel_bo_busy(intelImage->mt->bo);
 
    DBG("%s mesa_format %s target %s format %s type %s level %d %dx%dx%d\n",
@@ -213,7 +212,6 @@ intelTexSubImage(struct gl_context * ctx,
        texImage->Level, texImage->Width, texImage->Height, texImage->Depth);
 
    if (brw->gen >= 9) {
-      tr_mode = intelImage->mt->tr_mode;
       create_pbo = tex_busy || (intelImage->mt &&
                    intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE);
    } else {
@@ -226,11 +224,6 @@ intelTexSubImage(struct gl_context * ctx,
                                    pixels, false, create_pbo, packing);
    if (ok)
       return;
-
-   /* Currently there are no fallback paths to upload data to surfaces with
-    * tr_mode != INTEL_MIPTREE_TRMODE_NONE.
-    */
-   assert(tr_mode == INTEL_MIPTREE_TRMODE_NONE);
 
    ok = intel_texsubimage_tiled_memcpy(ctx, dims, texImage,
                                        xoffset, yoffset, zoffset,
