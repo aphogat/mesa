@@ -222,7 +222,6 @@ intelReadPixels(struct gl_context * ctx,
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
    bool create_pbo = false;
-   uint32_t tr_mode = INTEL_MIPTREE_TRMODE_NONE;
 
    DBG("%s\n", __func__);
 
@@ -230,10 +229,8 @@ intelReadPixels(struct gl_context * ctx,
       const struct gl_renderbuffer *rb = ctx->ReadBuffer->_ColorReadBuffer;
       const struct intel_renderbuffer *irb =
          intel_renderbuffer((struct gl_renderbuffer *)rb);
-      if (irb && irb->mt) {
-         tr_mode = irb->mt->tr_mode;
+      if (irb && irb->mt)
          create_pbo = irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
-      }
    }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
@@ -273,11 +270,6 @@ intelReadPixels(struct gl_context * ctx,
                                      true /* pbo_uses_src_format_type */,
                                      pack))
       return;
-
-   /* Currently there are no fallback paths to read data from surfaces with
-    * tr_mode != INTEL_MIPTREE_TRMODE_NONE.
-    */
-   assert(tr_mode == INTEL_MIPTREE_TRMODE_NONE);
 
    if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __func__);

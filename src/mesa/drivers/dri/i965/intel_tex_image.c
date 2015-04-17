@@ -486,13 +486,11 @@ intel_get_tex_image(struct gl_context *ctx,
    struct brw_context *brw = brw_context(ctx);
    bool ok;
    bool create_pbo = false;
-   uint32_t tr_mode = INTEL_MIPTREE_TRMODE_NONE;
 
    DBG("%s\n", __func__);
 
    if (brw->gen >= 9) {
       struct intel_texture_image *intelImage = intel_texture_image(texImage);
-      tr_mode = intelImage->mt->tr_mode;
       create_pbo = intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
    }
 
@@ -522,11 +520,6 @@ intel_get_tex_image(struct gl_context *ctx,
       intel_batchbuffer_emit_mi_flush(brw);
       return;
    }
-
-   /* Currently there are no fallback paths to read data from surfaces with
-    * tr_mode != INTEL_MIPTREE_TRMODE_NONE.
-    */
-   assert(tr_mode == INTEL_MIPTREE_TRMODE_NONE);
 
    if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __func__);
