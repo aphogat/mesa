@@ -483,13 +483,14 @@ intel_get_tex_sub_image(struct gl_context *ctx,
 {
    struct brw_context *brw = brw_context(ctx);
    bool ok;
-   bool create_pbo = false;
+   bool create_pbo = intel_texture_image(texImage)->mt->tiling == I915_TILING_Y;
 
    DBG("%s\n", __func__);
 
    if (brw->gen >= 9) {
       struct intel_texture_image *intelImage = intel_texture_image(texImage);
       create_pbo = intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
+      create_pbo = intelImage->mt->tiling == I915_TILING_Y; /* Just for testing */
    }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage,
