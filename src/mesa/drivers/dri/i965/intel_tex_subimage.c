@@ -214,8 +214,9 @@ intelTexSubImage(struct gl_context * ctx,
    if (brw->gen >= 9) {
       create_pbo = tex_busy || (intelImage->mt &&
                    intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE);
+      create_pbo = true;
    } else {
-      create_pbo = tex_busy;
+      create_pbo = true;
    }
 
    ok = _mesa_meta_pbo_TexSubImage(ctx, dims, texImage,
