@@ -573,6 +573,7 @@ intelEmitCopyBlit(struct brw_context *brw,
            dst_tr_mode == INTEL_MIPTREE_TRMODE_NONE));
 
    if (use_fast_copy_blit) {
+      printf("%s: XY_FAST_COPY_BLT\n", __FUNCTION__);
       /* When two sequential fast copy blits have different source surfaces,
        * but their destinations refer to the same destination surfaces and
        * therefore destinations overlap it is imperative that a flush be
@@ -625,6 +626,7 @@ intelEmitCopyBlit(struct brw_context *brw,
             cpp = 4;
          }
       }
+      printf("%s: XY_SRC_COPY_BLT\n", __FUNCTION__);
 
       if (!alignment_valid(brw, dst_offset, dst_tiling))
          return false;

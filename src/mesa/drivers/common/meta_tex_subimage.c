@@ -37,6 +37,7 @@
 #include "meta.h"
 #include "pbo.h"
 #include "readpix.h"
+#include <stdio.h>
 #include "shaderapi.h"
 #include "state.h"
 #include "teximage.h"
@@ -153,6 +154,7 @@ _mesa_meta_pbo_TexSubImage(struct gl_context *ctx, GLuint dims,
    bool success = false;
    int z;
 
+   printf("%s\n", __func__);
    if (!_mesa_is_bufferobj(packing->BufferObj) &&
        (!create_pbo || pixels == NULL))
       return false;
@@ -293,6 +295,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    if (!is_bufferobj && !create_pbo)
       return false;
 
+   printf("%s\n", __func__);
    if (format == GL_DEPTH_COMPONENT ||
        format == GL_DEPTH_STENCIL ||
        format == GL_STENCIL_INDEX ||
@@ -450,6 +453,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
 
    success = true;
 
+   printf("%s Success\n", __func__);
 fail:
    _mesa_DeleteFramebuffers(2, fbos);
    _mesa_DeleteTextures(1, &pbo_tex);

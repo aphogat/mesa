@@ -128,8 +128,10 @@ intelTexImage(struct gl_context * ctx,
                                    format, type, pixels,
                                    false /*allocate_storage*/,
                                    create_pbo, unpack);
-   if (ok)
+   if (ok) {
+      printf("_mesa_meta_pbo_TexSubImage Success\n");
       return;
+   }
 
    ok = intel_texsubimage_tiled_memcpy(ctx, dims, texImage,
                                        0, 0, 0, /*x,y,z offsets*/
@@ -138,8 +140,10 @@ intelTexImage(struct gl_context * ctx,
                                        texImage->Depth,
                                        format, type, pixels, unpack,
                                        false /*allocate_storage*/);
-   if (ok)
+   if (ok) {
+      printf("intel_texsubimage_tiled_memcpy Success\n");
       return;
+   }
 
    DBG("%s: upload image %dx%dx%d pixels %p\n",
        __func__, texImage->Width, texImage->Height, texImage->Depth,
@@ -147,6 +151,7 @@ intelTexImage(struct gl_context * ctx,
 
    _mesa_store_teximage(ctx, dims, texImage,
                         format, type, pixels, unpack);
+   printf("_mesa_store_teximage Success\n");
 }
 
 

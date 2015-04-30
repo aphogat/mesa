@@ -614,6 +614,7 @@ intel_get_yf_ys_bo_size(struct intel_mipmap_tree *mt, unsigned *alignment)
       mt->pitch = stride;
       for (i = min_size; i < size; i <<= 1)
          ;
+      printf("tiling = %d, pitch = %ld\n", mt->tiling, stride);
       return i;
    }
 }
@@ -694,6 +695,7 @@ intel_miptree_create(struct brw_context *brw,
                                         total_width, total_height, mt->cpp,
                                         &mt->tiling, &pitch,
                                         alloc_flags);
+      printf("tiling = %d, pitch = %ld\n", mt->tiling, pitch);
       mt->pitch = pitch;
    }
 
@@ -759,6 +761,7 @@ intel_miptree_create_for_bo(struct brw_context *brw,
    GLenum target;
 
    drm_intel_bo_get_tiling(bo, &tiling, &swizzle);
+   printf("%s\n", __FUNCTION__);
 
    /* Nothing will be able to use this miptree with the BO if the offset isn't
     * aligned.
@@ -830,6 +833,7 @@ intel_update_winsys_renderbuffer_miptree(struct brw_context *intel,
    assert(_mesa_get_format_base_format(format) == GL_RGB ||
           _mesa_get_format_base_format(format) == GL_RGBA);
 
+   printf("%s =>", __FUNCTION__);
    singlesample_mt = intel_miptree_create_for_bo(intel,
                                                  bo,
                                                  format,
@@ -896,6 +900,7 @@ intel_miptree_create_for_renderbuffer(struct brw_context *brw,
    bool ok;
    GLenum target = num_samples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
+   printf("%s =>\n", __FUNCTION__);
    mt = intel_miptree_create(brw, target, format, 0, 0,
                              width, height, depth, num_samples,
                              INTEL_MIPTREE_TILING_ANY,
@@ -2713,6 +2718,7 @@ intel_miptree_map(struct brw_context *brw,
    } else if (mt->stencil_mt && !(mode & BRW_MAP_DIRECT_BIT)) {
       intel_miptree_map_depthstencil(brw, mt, map, level, slice);
    } else if (use_intel_mipree_map_blit(brw, mt, mode, level, slice)) {
+      printf ("%s: using intel_miptree_map_blit()\n", __FUNCTION__);
       intel_miptree_map_blit(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (!(mode & GL_MAP_WRITE_BIT) &&

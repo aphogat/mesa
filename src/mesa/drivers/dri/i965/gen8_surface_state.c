@@ -289,6 +289,13 @@ gen8_emit_texture_surface_state(struct brw_context *brw,
    }
    surf[12] = 0;
 
+   printf("%s: tr_mode = %s, pitch = %d, QPitch = %d, MipTailStartLOD = %d\n",
+          __FUNCTION__,
+          mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE ? "INTEL_MIPTREE_TRMODE_NONE" :
+          (mt->tr_mode == INTEL_MIPTREE_TRMODE_YF ? "INTEL_MIPTREE_TRMODE_YF" : "INTEL_MIPTREE_TRMODE_YS"),
+         pitch - 1, mt->qpitch >> 2, 15);
+
+
    /* Emit relocation to surface contents */
    drm_intel_bo_emit_reloc(brw->batch.bo,
                            *surf_offset + 8 * 4,
@@ -515,6 +522,12 @@ gen8_update_renderbuffer_surface(struct brw_context *brw,
       surf[11] = 0;
    }
    surf[12] = 0;
+
+   printf("%s: tr_mode = %s, pitch = %d, QPitch = %d, MipTailStartLOD = %d\n",
+          __FUNCTION__,
+          mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE ? "INTEL_MIPTREE_TRMODE_NONE" :
+          (mt->tr_mode == INTEL_MIPTREE_TRMODE_YF ? "INTEL_MIPTREE_TRMODE_YF" : "INTEL_MIPTREE_TRMODE_YS"),
+         pitch - 1, mt->qpitch >> 2, 15);
 
    drm_intel_bo_emit_reloc(brw->batch.bo,
                            offset + 8 * 4,

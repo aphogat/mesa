@@ -22,6 +22,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdio.h>
 #include "main/glheader.h"
 #include "main/mtypes.h"
 #include "main/imports.h"
@@ -900,6 +901,7 @@ _mesa_meta_BlitFramebuffer(struct gl_context *ctx,
    const GLboolean use_glsl_version = ctx->Extensions.ARB_vertex_shader &&
                                       ctx->Extensions.ARB_fragment_shader;
 
+   printf("%s\n", __func__);
    /* Multisample texture blit support requires texture multisample. */
    if (readFb->Visual.samples > 0 &&
        !ctx->Extensions.ARB_texture_multisample) {

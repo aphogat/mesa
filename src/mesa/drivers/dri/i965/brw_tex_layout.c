@@ -902,8 +902,13 @@ brw_miptree_layout(struct brw_context *brw,
       if (is_tr_mode_yf_ys_allowed) {
          assert(brw->gen >= 9);
 
-         if (intel_miptree_can_use_tr_mode(mt))
+         if (intel_miptree_can_use_tr_mode(mt)) {
+               printf("%s: TR_MODE = %s\n", __FUNCTION__,
+                      mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE ? "INTEL_MIPTREE_TRMODE_NONE" :
+                      (mt->tr_mode == INTEL_MIPTREE_TRMODE_YF ? "INTEL_MIPTREE_TRMODE_YF" : "INTEL_MIPTREE_TRMODE_YS"));
             return;
+         }
+
          /* Failed to use selected tr_mode. Free up the memory allocated
           * for miptree levels in intel_miptree_total_width_height().
           */
@@ -911,5 +916,12 @@ brw_miptree_layout(struct brw_context *brw,
       }
       i++;
    }
+   printf("%s: mt->format = %s, bpp = %d, mt->align_w = %d,"
+          "mt->align_h = %d\n", __FUNCTION__,
+          _mesa_get_format_name(mt->format), bpp, mt->align_w,
+          mt->align_h);
+   printf("%s: TR_MODE = %s\n", __FUNCTION__,
+          mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE ? "INTEL_MIPTREE_TRMODE_NONE" :
+          (mt->tr_mode == INTEL_MIPTREE_TRMODE_YF ? "INTEL_MIPTREE_TRMODE_YF" : "INTEL_MIPTREE_TRMODE_YS"));
 }
 

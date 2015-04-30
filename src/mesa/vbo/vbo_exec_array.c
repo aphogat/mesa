@@ -1851,6 +1851,7 @@ vbo_initialize_exec_dispatch(const struct gl_context *ctx,
 void GLAPIENTRY
 _mesa_DrawArrays(GLenum mode, GLint first, GLsizei count)
 {
+   printf("%s\n", __FUNCTION__);
    vbo_exec_DrawArrays(mode, first, count);
 }
 
