@@ -222,7 +222,8 @@ intelReadPixels(struct gl_context * ctx,
 
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
-   bool create_pbo = false;
+   const struct intel_renderbuffer *irb = intel_renderbuffer(ctx->ReadBuffer->_ColorReadBuffer);
+   bool create_pbo = irb && irb->mt && irb->mt->tiling == I915_TILING_Y;
 
    DBG("%s\n", __func__);
 
@@ -232,6 +233,7 @@ intelReadPixels(struct gl_context * ctx,
          intel_renderbuffer((struct gl_renderbuffer *)rb);
       if (irb && irb->mt)
          create_pbo = irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
+      create_pbo = irb && irb->mt && irb->mt->tiling == I915_TILING_Y;
    }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
