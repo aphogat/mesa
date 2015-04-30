@@ -221,7 +221,8 @@ intelReadPixels(struct gl_context * ctx,
 
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
-   bool create_pbo = false;
+   /* Set true on pre-SKL. */
+   bool create_pbo = true;
 
    DBG("%s\n", __func__);
 
@@ -231,6 +232,7 @@ intelReadPixels(struct gl_context * ctx,
          intel_renderbuffer((struct gl_renderbuffer *)rb);
       if (irb && irb->mt)
          create_pbo = irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
+      create_pbo = true;
    }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
