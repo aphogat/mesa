@@ -119,6 +119,9 @@ intelTexImage(struct gl_context * ctx,
       create_pbo = true;
    }
 
+   /* TODO: Reduce the number of function parameters passed. Just pass
+    * texImage.
+    */
    ok = _mesa_meta_pbo_TexSubImage(ctx, dims, texImage, 0, 0, 0,
                                    texImage->Width, texImage->Height,
                                    texImage->Depth,

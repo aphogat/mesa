@@ -766,6 +766,10 @@ intel_miptree_create_for_bo(struct brw_context *brw,
    if (tiling != I915_TILING_NONE)
       assert(offset % 4096 == 0);
 
+   /* FIXME: Add 64K alignment restriction for Ys tiled BO. Currently there is
+    * no way to access the TRMODE of BO in here.
+    */
+
    /* miptrees can't handle negative pitch.  If you need flipping of images,
     * that's outside of the scope of the mt.
     */

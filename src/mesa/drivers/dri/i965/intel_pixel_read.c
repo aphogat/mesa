@@ -221,7 +221,7 @@ intelReadPixels(struct gl_context * ctx,
 
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
-   /* Set true on pre-SKL. */
+   /* FIXME: Set true on pre-SKL ? */
    bool create_pbo = true;
 
    DBG("%s\n", __func__);

@@ -885,6 +885,10 @@ intel_blit_framebuffer(struct gl_context *ctx,
    if (mask == 0x0)
       return;
 
+   /* FIXME: Make changes to always be successful in _mesa_meta_BlitFramebuffer()
+    * for Yf/Ys blits. Blitter path only supports non-overlapping blits.
+    * May be add another path if blitter fails.
+    */
    mask = _mesa_meta_BlitFramebuffer(ctx, readFb, drawFb,
                                      srcX0, srcY0, srcX1, srcY1,
                                      dstX0, dstY0, dstX1, dstY1,
