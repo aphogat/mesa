@@ -480,22 +480,22 @@ intel_get_tex_sub_image(struct gl_context *ctx,
 
    DBG("%s\n", __func__);
 
-   if (_mesa_is_bufferobj(ctx->Pack.BufferObj)) {
-      if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage,
-                                        xoffset, yoffset, zoffset,
-                                        width, height, depth, format, type,
-                                        pixels, &ctx->Pack)) {
-         /* Flush to guarantee coherency between the render cache and other
-          * caches the PBO could potentially be bound to after this point.
-          * See the related comment in intelReadPixels() for a more detailed
-          * explanation.
-          */
-         brw_emit_mi_flush(brw);
-         return;
-      }
-
-      perf_debug("%s: fallback to CPU mapping in PBO case\n", __func__);
+   if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage,
+                                     xoffset, yoffset, zoffset,
+                                     width, height, depth, format, type,
+                                     pixels, false /* create_pbo */,
+                                     &ctx->Pack)) {
+      /* Flush to guarantee coherency between the render cache and other
+       * caches the PBO could potentially be bound to after this point.
+       * See the related comment in intelReadPixels() for a more detailed
+       * explanation.
+       */
+      brw_emit_mi_flush(brw);
+      return;
    }
+
+   if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
+      perf_debug("%s: fallback to CPU mapping in PBO case\n", __func__);
 
    ok = intel_gettexsubimage_tiled_memcpy(ctx, texImage, xoffset, yoffset,
                                           width, height,
