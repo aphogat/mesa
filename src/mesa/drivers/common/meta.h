@@ -542,6 +542,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
                               int xoffset, int yoffset, int zoffset,
                               int width, int height, int depth,
                               GLenum format, GLenum type, const void *pixels,
+                              bool create_pbo,
                               const struct gl_pixelstore_attrib *packing);
 
 extern void

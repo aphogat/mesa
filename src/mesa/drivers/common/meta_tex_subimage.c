@@ -256,6 +256,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
                               int xoffset, int yoffset, int zoffset,
                               int width, int height, int depth,
                               GLenum format, GLenum type, const void *pixels,
+                              bool create_pbo,
                               const struct gl_pixelstore_attrib *packing)
 {
    GLuint pbo = 0, pbo_tex = 0, fbos[2] = { 0, 0 };
@@ -265,10 +266,12 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    GLenum dstBaseFormat = _mesa_unpack_format_to_base_format(format);
    GLenum status, src_base_format;
    bool success = false, clear_channels_to_zero = false;
+   const bool is_bufferobj = _mesa_is_bufferobj(packing->BufferObj);
+   const bool create_temp_pbo = create_pbo && !is_bufferobj;
    float save_clear_color[4];
    int z;
 
-   if (!_mesa_is_bufferobj(packing->BufferObj))
+   if (!is_bufferobj && !create_pbo)
       return false;
 
    if (format == GL_DEPTH_COMPONENT ||
@@ -300,9 +303,11 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    image_height = packing->ImageHeight == 0 ? height : packing->ImageHeight;
    full_height = image_height * (depth - 1) + height;
 
-   pbo_tex_image = create_texture_for_pbo(ctx, false, GL_PIXEL_PACK_BUFFER,
-                                          width, full_height * depth,
-                                          format, type, pixels, packing,
+   pbo_tex_image = create_texture_for_pbo(ctx, create_pbo,
+                                          GL_PIXEL_PACK_BUFFER,
+                                          width, full_height,
+                                          format, type,
+                                          pixels, packing,
                                           &pbo, &pbo_tex);
    if (!pbo_tex_image)
       return false;
@@ -400,6 +405,21 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
       _mesa_ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       _mesa_ClearColor(save_clear_color[0], save_clear_color[1],
                        save_clear_color[2], save_clear_color[3]);
+   }
+
+   /* If temporary pbo is created in meta to read the pixel/texture data,
+    * now copy that data to client's memory.
+    */
+    if (create_temp_pbo) {
+      if (tex_image == NULL /* ReadPixels */) {
+         _mesa_BindFramebuffer(GL_READ_FRAMEBUFFER, fbos[1]);
+         _mesa_update_state(ctx);
+         _mesa_readpixels(ctx, 0, 0, width, height, format, type,
+                          packing, (void *) pixels);
+      } else {
+         _mesa_meta_GetTexImage(ctx, format, type, (GLvoid *) pixels,
+                                pbo_tex_image);
+      }
    }
 
    success = true;
