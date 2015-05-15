@@ -250,13 +250,31 @@ fail:
    return success;
 }
 
+static void
+get_pbo_tex_format_type(const struct gl_context *ctx,
+                        const struct gl_texture_image *tex_image,
+                        GLenum *pbo_tex_format,
+                        GLenum *pbo_tex_type)
+{
+   GLuint comps;
+   mesa_format format = tex_image ?
+                        tex_image->TexFormat :
+                        ctx->ReadBuffer->_ColorReadBuffer->Format;
+   *pbo_tex_format = _mesa_get_format_base_format(format);
+
+   if (_mesa_is_format_integer(format))
+      *pbo_tex_format = _mesa_base_format_to_integer_format(*pbo_tex_format);
+
+   _mesa_format_to_type_and_comps(format, pbo_tex_type, &comps);
+}
+
 bool
 _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
                               struct gl_texture_image *tex_image,
                               int xoffset, int yoffset, int zoffset,
                               int width, int height, int depth,
                               GLenum format, GLenum type, const void *pixels,
-                              bool create_pbo,
+                              bool create_pbo, bool pbo_uses_src_format_type,
                               const struct gl_pixelstore_attrib *packing)
 {
    GLuint pbo = 0, pbo_tex = 0, fbos[2] = { 0, 0 };
@@ -265,6 +283,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    struct gl_renderbuffer *rb = NULL;
    GLenum dstBaseFormat = _mesa_unpack_format_to_base_format(format);
    GLenum status, src_base_format;
+   GLenum pbo_tex_format = format, pbo_tex_type = type;
    bool success = false, clear_channels_to_zero = false;
    const bool is_bufferobj = _mesa_is_bufferobj(packing->BufferObj);
    const bool create_temp_pbo = create_pbo && !is_bufferobj;
@@ -280,8 +299,11 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
        format == GL_COLOR_INDEX)
       return false;
 
+   if (pbo_uses_src_format_type)
+      assert(create_pbo);
+
    /* Don't use meta path for readpixels in below conditions. */
-   if (!tex_image) {
+   if (!tex_image && (!create_temp_pbo || !pbo_uses_src_format_type)) {
       rb = ctx->ReadBuffer->_ColorReadBuffer;
 
       if (_mesa_get_readpixels_transfer_ops(ctx, rb->Format, format,
@@ -296,6 +318,10 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
          return false;
    }
 
+   if (create_temp_pbo && pbo_uses_src_format_type)
+      get_pbo_tex_format_type(ctx, tex_image,
+                              &pbo_tex_format, &pbo_tex_type);
+
    /* For arrays, use a tall (height * depth) 2D texture but taking into
     * account the inter-image padding specified with the image height packing
     * property.
@@ -306,7 +332,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    pbo_tex_image = create_texture_for_pbo(ctx, create_pbo,
                                           GL_PIXEL_PACK_BUFFER,
                                           width, full_height,
-                                          format, type,
+                                          pbo_tex_format, pbo_tex_type,
                                           pixels, packing,
                                           &pbo, &pbo_tex);
    if (!pbo_tex_image)

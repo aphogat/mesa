@@ -227,6 +227,7 @@ intelReadPixels(struct gl_context * ctx,
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
                                      height, 1, format, type, pixels,
                                      false /* create_pbo */,
+                                     false /* pbo_uses_src_format_type */,
                                      pack)) {
       /* _mesa_meta_pbo_GetTexSubImage() implements PBO transfers by
        * binding the user-provided BO as a fake framebuffer and rendering

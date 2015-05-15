@@ -484,6 +484,7 @@ intel_get_tex_image(struct gl_context *ctx,
                                      texImage->Width, texImage->Height,
                                      texImage->Depth, format, type,
                                      pixels, false /* create_pbo */,
+                                     false /* pbo_uses_src_format_type */,
                                      &ctx->Pack)) {
       /* Flush to guarantee coherency between the render cache and other
        * caches the PBO could potentially be bound to after this point.
