@@ -46,6 +46,10 @@ _mesa_get_readpixels_transfer_ops(const struct gl_context *ctx,
                                   GLenum format, GLenum type,
                                   GLboolean uses_blit);
 
+extern bool
+_mesa_need_signed_unsigned_int_conversion(mesa_format rbFormat,
+                                          GLenum format, GLenum type);
+
 extern void
 _mesa_readpixels(struct gl_context *ctx,
                  GLint x, GLint y, GLsizei width, GLsizei height,

@@ -114,6 +114,22 @@ _mesa_get_readpixels_transfer_ops(const struct gl_context *ctx,
    return transferOps;
 }
 
+bool
+_mesa_need_signed_unsigned_int_conversion(mesa_format rbFormat,
+                                          GLenum format, GLenum type)
+{
+   const GLenum srcType = _mesa_get_format_datatype(rbFormat);
+   return (srcType == GL_INT &&
+           _mesa_is_enum_format_integer(format) &&
+           (type == GL_UNSIGNED_INT ||
+            type == GL_UNSIGNED_SHORT ||
+            type == GL_UNSIGNED_BYTE)) ||
+          (srcType == GL_UNSIGNED_INT &&
+           _mesa_is_enum_format_integer(format) &&
+           (type == GL_INT ||
+            type == GL_SHORT ||
+            type == GL_BYTE));
+}
 
 /**
  * Return true if memcpy cannot be used for ReadPixels.
@@ -130,7 +146,6 @@ _mesa_readpixels_needs_slow_path(const struct gl_context *ctx, GLenum format,
 {
    struct gl_renderbuffer *rb =
          _mesa_get_read_renderbuffer_for_format(ctx, format);
-   GLenum srcType;
 
    assert(rb);
 
@@ -157,20 +172,9 @@ _mesa_readpixels_needs_slow_path(const struct gl_context *ctx, GLenum format,
 
       /* Conversion between signed and unsigned integers needs masking
        * (it isn't just memcpy). */
-      srcType = _mesa_get_format_datatype(rb->Format);
-
-      if ((srcType == GL_INT &&
-           _mesa_is_enum_format_integer(format) &&
-           (type == GL_UNSIGNED_INT ||
-            type == GL_UNSIGNED_SHORT ||
-            type == GL_UNSIGNED_BYTE)) ||
-          (srcType == GL_UNSIGNED_INT &&
-           _mesa_is_enum_format_integer(format) &&
-           (type == GL_INT ||
-            type == GL_SHORT ||
-            type == GL_BYTE))) {
+      if (_mesa_need_signed_unsigned_int_conversion(rb->Format, format,
+                                                     type))
          return GL_TRUE;
-      }
 
       /* And finally, see if there are any transfer ops. */
       return _mesa_get_readpixels_transfer_ops(ctx, rb->Format, format, type,
