@@ -283,6 +283,9 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
 
       if (_mesa_need_rgb_to_luminance_conversion(rb->Format, format))
          return false;
+
+      if (_mesa_need_signed_unsigned_int_conversion(rb->Format, format, type))
+         return false;
    }
 
    /* For arrays, use a tall (height * depth) 2D texture but taking into
