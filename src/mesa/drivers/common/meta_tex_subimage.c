@@ -273,12 +273,14 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
        format == GL_COLOR_INDEX)
       return false;
 
-   if (ctx->_ImageTransferState)
-      return false;
-
-
+   /* Don't use meta path for readpixels in below conditions. */
    if (!tex_image) {
       rb = ctx->ReadBuffer->_ColorReadBuffer;
+
+      if (_mesa_get_readpixels_transfer_ops(ctx, rb->Format, format,
+                                            type, GL_FALSE))
+         return false;
+
       if (_mesa_need_rgb_to_luminance_conversion(rb->Format, format))
          return false;
    }
