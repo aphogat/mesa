@@ -262,6 +262,7 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
    int full_height, image_height;
    struct gl_texture_image *pbo_tex_image;
    struct gl_renderbuffer *rb = NULL;
+   GLenum dstBaseFormat = _mesa_unpack_format_to_base_format(format);
    GLenum status, src_base_format;
    bool success = false, clear_channels_to_zero = false;
    float save_clear_color[4];
@@ -284,7 +285,8 @@ _mesa_meta_pbo_GetTexSubImage(struct gl_context *ctx, GLuint dims,
                                             type, GL_FALSE))
          return false;
 
-      if (_mesa_need_rgb_to_luminance_conversion(rb->Format, format))
+      if (_mesa_need_rgb_to_luminance_conversion(rb->_BaseFormat,
+                                                 dstBaseFormat))
          return false;
 
       if (_mesa_need_signed_unsigned_int_conversion(rb->Format, format, type))
