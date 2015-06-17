@@ -489,9 +489,6 @@ intelEmitCopyBlit(struct brw_context *brw,
    if ((dst_y_tiled || src_y_tiled) && brw->gen < 6)
       return false;
 
-   assert(!dst_y_tiled || (dst_pitch % 128) == 0);
-   assert(!src_y_tiled || (src_pitch % 128) == 0);
-
    /* do space check before going any further */
    do {
        aper_array[0] = brw->batch.bo;
@@ -569,6 +566,9 @@ intelEmitCopyBlit(struct brw_context *brw,
       CMD |= get_tr_vertical_align(dst_tr_mode, cpp, false /* is_src */);
 
    } else {
+      assert(!dst_y_tiled || (dst_pitch % 128) == 0);
+      assert(!src_y_tiled || (src_pitch % 128) == 0);
+
       /* For big formats (such as floating point), do the copy using 16 or
        * 32bpp and multiply the coordinates.
        */
