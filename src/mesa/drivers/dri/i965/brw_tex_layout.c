@@ -277,7 +277,9 @@ intel_vertical_texture_alignment_unit(struct brw_context *brw,
    if (mt->format == MESA_FORMAT_S_UINT8)
       return brw->gen >= 7 ? 8 : 4;
 
-   if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE) {
+   if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
+       mt->target != GL_TEXTURE_1D &&
+       mt->target != GL_TEXTURE_1D_ARRAY) {
       uint32_t align = tr_mode_vertical_texture_alignment(brw, mt);
       /* XY_FAST_COPY_BLT doesn't support vertical alignment < 64 */
       return align < 64 ? 64 : align;
