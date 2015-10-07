@@ -2851,11 +2851,11 @@ intel_miptree_map(struct brw_context *brw,
       /* Fast copy blit requires the start pixel to be Oword aligned. Handle
        * the cases which don't meet this requirement.
        */
-      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
-          ((x * mt->cpp) & 15))
+//      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
+//          ((x * mt->cpp) & 15))
          intel_miptree_map_unaligned_blit(brw, mt, map, level, slice);
-      else
-         intel_miptree_map_blit(brw, mt, map, level, slice);
+//      else
+//         intel_miptree_map_blit(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (!(mode & GL_MAP_WRITE_BIT) &&
               !mt->compressed && cpu_has_sse4_1 &&
@@ -2904,11 +2904,11 @@ intel_miptree_unmap(struct brw_context *brw,
       /* Fast copy blit requires the start pixel to be Oword aligned. Handle
        * the cases which don't meet this requirement.
        */
-      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
-          ((map->x * mt->cpp) & 15))
+//      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
+//          ((map->x * mt->cpp) & 15))
          intel_miptree_unmap_unaligned_blit(brw, mt, map, level, slice);
-      else
-         intel_miptree_unmap_blit(brw, mt, map, level, slice);
+//      else
+//         intel_miptree_unmap_blit(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (map->buffer && cpu_has_sse4_1) {
       intel_miptree_unmap_movntdqa(brw, mt, map, level, slice);
