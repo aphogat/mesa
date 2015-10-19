@@ -249,6 +249,10 @@ gen8_emit_texture_surface_state(struct brw_context *brw,
 
    uint32_t *surf = allocate_surface_state(brw, surf_offset, surf_index);
 
+   /* On gen9 X tiling is allowed only for 2D surface. */
+   if (brw->gen >= 9 && tiling_mode == GEN8_SURFACE_TILING_X)
+      assert(surf_type == BRW_SURFACE_2D);
+
    surf[0] = SET_FIELD(surf_type, BRW_SURFACE_TYPE) |
              format << BRW_SURFACE_FORMAT_SHIFT |
              vertical_alignment(brw, mt, surf_type) |
@@ -491,13 +495,18 @@ gen8_update_renderbuffer_surface(struct brw_context *brw,
    }
 
    uint32_t *surf = allocate_surface_state(brw, &offset, surf_index);
+   uint32_t tiling_mode = surface_tiling_mode(tiling);
+
+   /* On gen9 X tiling is allowed only for 2D surface. */
+   if (brw->gen >= 9 && tiling_mode == GEN8_SURFACE_TILING_X)
+      assert(surf_type == BRW_SURFACE_2D);
 
    surf[0] = (surf_type << BRW_SURFACE_TYPE_SHIFT) |
              (is_array ? GEN7_SURFACE_IS_ARRAY : 0) |
              (format << BRW_SURFACE_FORMAT_SHIFT) |
              vertical_alignment(brw, mt, surf_type) |
              horizontal_alignment(brw, mt, surf_type) |
-             surface_tiling_mode(tiling);
+             tiling_mode;
 
    surf[1] = SET_FIELD(mocs, GEN8_SURFACE_MOCS) | mt->qpitch >> 2;
 
