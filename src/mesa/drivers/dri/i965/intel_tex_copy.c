@@ -83,15 +83,30 @@ intel_copy_texsubimage(struct brw_context *brw,
    int dst_slice = slice + intelImage->base.Base.Face +
                    intelImage->base.Base.TexObject->MinLayer;
 
+   const bool need_unaligned_blit =
+      (irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE ||
+       intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE) &&
+      ((x * irb->mt->cpp) & 15 || (dstx * intelImage->mt->cpp) & 15);
+
    _mesa_unlock_texture(&brw->ctx, intelImage->base.Base.TexObject);
 
-   /* blit from src buffer to texture */
-   ret = intel_miptree_blit(brw,
-                            irb->mt, irb->mt_level, irb->mt_layer,
-                            x, y, irb->Base.Base.Name == 0,
-                            intelImage->mt, dst_level, dst_slice,
-                            dstx, dsty, false,
-                            width, height, GL_COPY);
+   if (need_unaligned_blit) {
+      /* blit from src buffer to texture */
+      ret = intel_miptree_unaligned_blit(brw,
+                                         irb->mt, irb->mt_level, irb->mt_layer,
+                                         x, y, irb->Base.Base.Name == 0,
+                                         intelImage->mt, dst_level, dst_slice,
+                                         dstx, dsty, false,
+                                         width, height, GL_COPY);
+   } else {
+      /* blit from src buffer to texture */
+      ret = intel_miptree_blit(brw,
+                               irb->mt, irb->mt_level, irb->mt_layer,
+                               x, y, irb->Base.Base.Name == 0,
+                               intelImage->mt, dst_level, dst_slice,
+                               dstx, dsty, false,
+                               width, height, GL_COPY);
+   }
 
    _mesa_lock_texture(&brw->ctx, intelImage->base.Base.TexObject);
 
