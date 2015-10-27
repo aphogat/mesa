@@ -222,6 +222,318 @@ fail:
 }
 
 /**
+ * This function handles the cases when one or both of src, dst are Yf/Ys tiled
+ * and start pixel (x) of src/dst is not Oword aligned. Only fast copy blit
+ * supports blitting Yf/Ys tiled buffers and has this start pixel Oword
+ * alignmnet requirement.
+ *
+ * This function handles those cases by blitting the buffers to a temporary
+ * linear buffers starting at pixel x=0. Number of blits done by this function
+ * depends on whether src, dst have unaligned start pixel and TRMODE_{YF,YS}.
+ * In worst case it does 4 blits and 2 blits in best case.
+ */
+bool
+intel_miptree_unaligned_blit(struct brw_context *brw,
+                             struct intel_mipmap_tree *src_mt,
+                             int src_level, int src_slice,
+                             uint32_t src_x, uint32_t src_y, bool src_flip,
+                             struct intel_mipmap_tree *dst_mt,
+                             int dst_level, int dst_slice,
+                             uint32_t dst_x, uint32_t dst_y, bool dst_flip,
+                             uint32_t width, uint32_t height,
+                             GLenum logicop)
+{
+   const bool is_src_x_oword_aligned = ((src_x * src_mt->cpp) & 15) == 0;
+   const bool is_dst_x_oword_aligned = ((dst_x * dst_mt->cpp) & 15) == 0;
+   const bool is_src_tr_mode_none =
+      src_mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE;
+   const bool is_dst_tr_mode_none =
+      dst_mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE;
+
+   struct intel_mipmap_tree *src_mt_linear = NULL;
+   struct intel_mipmap_tree *dst_mt_linear = NULL;
+   bool ret = false;
+
+   assert(!is_src_tr_mode_none || !is_dst_tr_mode_none);
+   assert(!is_src_x_oword_aligned || !is_dst_x_oword_aligned);
+
+   if (is_src_x_oword_aligned) {
+     if (is_src_tr_mode_none) {
+         /* Blit dst -> dst_mt_linear */
+         dst_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                                 dst_mt, dst_level, dst_slice,
+                                 0, dst_y, dst_flip,
+                                 dst_x + width, height);
+
+         if (!dst_mt_linear)
+            return false;
+
+         /* Blit src -> dst_mt_linear */
+         if (!intel_miptree_blit(brw,
+                                 src_mt, src_level, src_slice,
+                                 src_x, src_y, src_flip,
+                                 dst_mt_linear, 0, 0,
+                                 dst_x, 0, false,
+                                 width, height, GL_COPY))
+            goto fail;
+
+
+          /* Blit dst_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  dst_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  0, dst_y, dst_flip,
+                                  dst_x + width, height, GL_COPY);
+
+         intel_miptree_release(&dst_mt_linear);
+      } else if (is_dst_tr_mode_none) {
+         /* Blit src -> src_mt_linear */
+         src_mt_linear = intel_miptree_blit_to_linear(brw,
+                                 src_mt, src_level, src_slice,
+                                 0, src_y, src_flip,
+                                 src_x + width, height);
+         if (!src_mt_linear)
+            return false;
+
+          /* Blit src_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  src_mt_linear, 0, 0,
+                                  src_x, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  dst_x, dst_y, dst_flip,
+                                  width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+      } else {
+         /* Blit src -> src_mt_linear */
+         src_mt_linear = intel_miptree_blit_to_linear(brw,
+                                 src_mt, src_level, src_slice,
+                                 src_x, src_y, src_flip,
+                                 width, height);
+         if (!src_mt_linear)
+            return false;
+
+         /* Blit dst -> dst_mt_linear */
+         dst_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                                 dst_mt, dst_level, dst_slice,
+                                 0, dst_y, dst_flip,
+                                 dst_x + width, height);
+
+         if (!dst_mt_linear)
+            return false;
+
+         /* Blit src_mt_linear -> dst_mt_linear */
+         if (!intel_miptree_blit(brw,
+                                 src_mt_linear, src_level, src_slice,
+                                 0, 0, src_flip,
+                                 dst_mt_linear, 0, 0,
+                                 dst_x, 0, false,
+                                 width, height, GL_COPY))
+            goto fail;
+
+
+          /* Blit dst_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  dst_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  0, dst_y, dst_flip,
+                                  dst_x + width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+         intel_miptree_release(&dst_mt_linear);
+      }
+   } else if (is_dst_x_oword_aligned) {
+      if (is_src_tr_mode_none) {
+         /* Blit src -> src_mt_linear */
+         src_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                                 src_mt, src_level, src_slice,
+                                 src_x, src_y, src_flip,
+                                 width, height);
+
+         if (!src_mt_linear)
+            return false;
+
+          /* Blit dst_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  src_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  dst_x, dst_y, dst_flip,
+                                  width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+      } else if (is_dst_tr_mode_none) {
+          /* Blit src -> src_mt_linear */
+         src_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                                 src_mt, src_level, src_slice,
+                                 0, src_y, src_flip,
+                                 src_x + width, height);
+
+         if (!src_mt_linear)
+            return false;
+
+          /* Blit src_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  src_mt_linear, 0, 0,
+                                  src_x, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  dst_x, dst_y, dst_flip,
+                                  width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+      } else {
+         /* Blit src -> src_mt_linear */
+         src_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                                 src_mt, src_level, src_slice,
+                                 0, src_y, src_flip,
+                                 src_x + width, height);
+
+         if (!src_mt_linear)
+            return false;
+
+         dst_mt_linear =
+            intel_miptree_create(brw, GL_TEXTURE_2D, dst_mt->format,
+                                 /* first_level */ 0,
+                                 /* last_level */ 0,
+                                 width, height, 1,
+                                 /* samples */ 0,
+                                 MIPTREE_LAYOUT_TILING_NONE);
+
+         if (!dst_mt_linear)
+            goto fail;
+
+          /* Blit src_mt_linear -> dst_mt_linear */
+          if (!intel_miptree_blit(brw,
+                                  src_mt_linear, 0, 0,
+                                  src_x, 0, false,
+                                  dst_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  width, height, GL_COPY))
+            goto fail;
+
+          /* Blit dst_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  dst_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  dst_x, dst_y, dst_flip,
+                                  width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+         intel_miptree_release(&dst_mt_linear);
+      }
+   } else {
+      if (is_src_tr_mode_none) {
+          /* Blit dst_mt -> dst_mt_linear */
+         dst_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                                 dst_mt, dst_level, dst_slice,
+                                 0, dst_y, dst_flip,
+                                 dst_x + width, height);
+
+         if (!dst_mt_linear)
+            return false;
+
+         /* Blit src -> dst_mt_linear */
+         if (!intel_miptree_blit(brw,
+                                 src_mt, src_level, src_slice,
+                                 src_x, src_y, src_flip,
+                                 dst_mt_linear, 0, 0,
+                                 dst_x, 0, false,
+                                 width, height, GL_COPY))
+            goto fail;
+
+         /* Blit dst_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  dst_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  0, dst_y, dst_flip,
+                                  dst_x + width, height, GL_COPY);
+
+         intel_miptree_release(&dst_mt_linear);
+      } else if (is_dst_tr_mode_none) {
+         /* Blit src -> src_mt_linear */
+         src_mt_linear =
+         intel_miptree_blit_to_linear(brw,
+                        src_mt, src_level, src_slice,
+                        0, src_y, src_flip,
+                        src_x + width, height);
+
+         if (!src_mt_linear)
+            return false;
+
+         /* Blit src_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  src_mt_linear, 0, 0,
+                                  src_x, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  dst_x, dst_y, dst_flip,
+                                  width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+      } else {
+         /* Blit src -> src_mt_linear */
+         src_mt_linear = intel_miptree_blit_to_linear(brw,
+                                 src_mt, src_level, src_slice,
+                                 0, src_y, src_flip,
+                                 src_x + width, height);
+         if (!src_mt_linear)
+            return false;
+
+         /* Blit dst_mt -> dst_mt_linear */
+         dst_mt_linear = intel_miptree_blit_to_linear(brw,
+                                 dst_mt, dst_level, dst_slice,
+                                 0, dst_y, dst_flip,
+                                 dst_x + width, height);
+         if (!dst_mt_linear)
+            return false;
+
+         /* Blit src_mt_linear -> dst_mt_linear */
+         if (!intel_miptree_blit(brw,
+                                 src_mt_linear, 0, 0,
+                                 src_x, 0, false,
+                                 dst_mt_linear, 0, 0,
+                                 dst_x, 0, false,
+                                 width, height, GL_COPY))
+            goto fail;
+
+         /* Blit dst_mt_linear -> dst */
+          ret = intel_miptree_blit(brw,
+                                  dst_mt_linear, 0, 0,
+                                  0, 0, false,
+                                  dst_mt, dst_level, dst_slice,
+                                  0, dst_y, dst_flip,
+                                  dst_x + width, height, GL_COPY);
+
+         intel_miptree_release(&src_mt_linear);
+         intel_miptree_release(&dst_mt_linear);
+      }
+   }
+   return ret;
+
+fail:
+   if (!is_src_x_oword_aligned && !dst_mt_linear)
+      fprintf(stderr, "Failed to allocate blit temporary\n");
+   else
+      fprintf(stderr, "Failed to blit to temporary buffer\n");
+
+   if (src_mt_linear)
+      intel_miptree_release(&src_mt_linear);
+   if (dst_mt_linear)
+      intel_miptree_release(&dst_mt_linear);
+
+   return false;
+}
+
+/**
  * Implements a rectangular block transfer (blit) of pixels between two
  * miptrees.
  *

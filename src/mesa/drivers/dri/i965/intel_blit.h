@@ -48,6 +48,18 @@ intelEmitCopyBlit(struct brw_context *brw,
 
 bool intel_miptree_blit_compatible_formats(mesa_format src, mesa_format dst);
 
+bool intel_miptree_unaligned_blit(struct brw_context *brw,
+                                  struct intel_mipmap_tree *src_mt,
+                                  int src_level, int src_slice,
+                                  uint32_t src_x, uint32_t src_y,
+                                  bool src_flip,
+                                  struct intel_mipmap_tree *dst_mt,
+                                  int dst_level, int dst_slice,
+                                  uint32_t dst_x, uint32_t dst_y,
+                                  bool dst_flip,
+                                  uint32_t width, uint32_t height,
+                                  GLenum logicop);
+
 bool intel_miptree_blit(struct brw_context *brw,
                         struct intel_mipmap_tree *src_mt,
                         int src_level, int src_slice,
