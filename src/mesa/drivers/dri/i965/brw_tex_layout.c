@@ -802,6 +802,7 @@ brw_miptree_layout(struct brw_context *brw,
                    uint32_t layout_flags)
 {
    const unsigned bpp = mt->cpp * 8;
+
    /* Enable YF/YS tiling only for color surfaces because depth and
     * stencil surfaces are not supported in blitter using fast copy
     * blit and meta PBO upload, download paths. No other paths
@@ -810,7 +811,7 @@ brw_miptree_layout(struct brw_context *brw,
     * path to do depth/stencil data upload/download to Yf/Ys tiled
     * surfaces.
     */
-   const bool is_tr_mode_yf_ys_allowed =
+   bool is_tr_mode_yf_ys_allowed =
       brw->gen >= 9 &&
       !(layout_flags & MIPTREE_LAYOUT_FOR_BO) &&
       !mt->compressed &&
@@ -819,11 +820,13 @@ brw_miptree_layout(struct brw_context *brw,
       !(layout_flags & MIPTREE_LAYOUT_FORCE_HALIGN16) &&
       (bpp && _mesa_is_pow_two(bpp)) &&
       mt->target == GL_TEXTURE_2D &&
-      mt->num_samples == 0 &&
-      /* FIXME: To avoid piglit regressions keep the Yf/Ys tiling
-       * disabled at the moment.
-       */
-      true;
+      mt->num_samples == 0;
+
+      const char *str = getenv("INTEL_YF");
+      if (str)
+         is_tr_mode_yf_ys_allowed = is_tr_mode_yf_ys_allowed && !strcmp(str, "1");
+      else
+         is_tr_mode_yf_ys_allowed = false;
 
    /* Lower index (Yf) is the higher priority mode */
    const uint32_t tr_mode[3] = {INTEL_MIPTREE_TRMODE_YF,
