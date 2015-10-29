@@ -170,14 +170,36 @@ do_blit_copypixels(struct gl_context * ctx,
    dstx += srcx - orig_srcx;
    dsty += srcy - orig_srcy;
 
-   if (!intel_miptree_blit(brw,
-                           read_irb->mt, read_irb->mt_level, read_irb->mt_layer,
-                           srcx, srcy, _mesa_is_winsys_fbo(read_fb),
-                           draw_irb->mt, draw_irb->mt_level, draw_irb->mt_layer,
-                           dstx, dsty, _mesa_is_winsys_fbo(fb),
-                           width, height,
-                           (ctx->Color.ColorLogicOpEnabled ?
-                            ctx->Color.LogicOp : GL_COPY))) {
+   const bool need_unaligned_blit =
+      (read_irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE ||
+       draw_irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE) &&
+      ((srcx * read_irb->mt->cpp) & 15 || (dstx * draw_irb->mt->cpp) & 15);
+
+   if (need_unaligned_blit) {
+      if (!intel_miptree_unaligned_blit(brw,
+                                        read_irb->mt, read_irb->mt_level,
+                                        read_irb->mt_layer,
+                                        srcx, srcy,
+                                        _mesa_is_winsys_fbo(read_fb),
+                                        draw_irb->mt, draw_irb->mt_level,
+                                        draw_irb->mt_layer,
+                                        dstx, dsty, _mesa_is_winsys_fbo(fb),
+                                        width, height,
+                                        (ctx->Color.ColorLogicOpEnabled ?
+                                         ctx->Color.LogicOp : GL_COPY))) {
+         DBG("%s: blit failure\n", __func__);
+         return false;
+      }
+   } else if (!intel_miptree_blit(brw,
+                                  read_irb->mt, read_irb->mt_level,
+                                  read_irb->mt_layer,
+                                  srcx, srcy, _mesa_is_winsys_fbo(read_fb),
+                                  draw_irb->mt, draw_irb->mt_level,
+                                  draw_irb->mt_layer,
+                                  dstx, dsty, _mesa_is_winsys_fbo(fb),
+                                  width, height,
+                                 (ctx->Color.ColorLogicOpEnabled ?
+                                  ctx->Color.LogicOp : GL_COPY))) {
       DBG("%s: blit failure\n", __func__);
       return false;
    }
