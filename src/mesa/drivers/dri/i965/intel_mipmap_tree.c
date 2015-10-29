@@ -2338,6 +2338,31 @@ fail:
    map->stride = 0;
 }
 
+
+static void
+intel_miptree_unmap_unaligned_blit(struct brw_context *brw,
+	                           struct intel_mipmap_tree *mt,
+			           struct intel_miptree_map *map,
+			           unsigned int level,
+			           unsigned int slice)
+{
+   struct gl_context *ctx = &brw->ctx;
+
+   intel_miptree_unmap_raw(map->linear_mt);
+
+   if (map->mode & GL_MAP_WRITE_BIT) {
+      bool ok = intel_miptree_blit(brw,
+                                   map->linear_mt, 0, 0,
+                                   0, 0, false,
+                                   mt, level, slice,
+                                   0, map->y, false,
+                                   map->x + map->w, map->h, GL_COPY);
+      WARN_ONCE(!ok, "Failed to blit from linear temporary mapping");
+   }
+
+   intel_miptree_release(&map->linear_mt);
+}
+
 /**
  * "Map" a buffer by copying it to an untiled temporary using MOVNTDQA.
  */
@@ -2875,7 +2900,14 @@ intel_miptree_unmap(struct brw_context *brw,
    } else if (mt->stencil_mt && !(map->mode & BRW_MAP_DIRECT_BIT)) {
       intel_miptree_unmap_depthstencil(brw, mt, map, level, slice);
    } else if (map->linear_mt) {
-      intel_miptree_unmap_blit(brw, mt, map, level, slice);
+      /* Fast copy blit requires the start pixel to be Oword aligned. Handle
+       * the cases which don't meet this requirement.
+       */
+      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
+          ((map->x * mt->cpp) & 15))
+         intel_miptree_unmap_unaligned_blit(brw, mt, map, level, slice);
+      else
+         intel_miptree_unmap_blit(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (map->buffer && cpu_has_sse4_1) {
       intel_miptree_unmap_movntdqa(brw, mt, map, level, slice);
