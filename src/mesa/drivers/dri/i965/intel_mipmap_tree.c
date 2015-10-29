@@ -2284,6 +2284,61 @@ intel_miptree_unmap_blit(struct brw_context *brw,
 }
 
 /**
+ * "Map" a buffer by copying it to an untiled temporary buffer starting at
+ * pixel x = 0. This function is useful for mapping Yf/Ys tiled buffers
+ * using fast copy blit. Fast copy blit requires the Oword aligned start
+ * pixel (x) for the buffer to be mapped.
+ */
+static void
+intel_miptree_map_unaligned_blit(struct brw_context *brw,
+		                 struct intel_mipmap_tree *mt,
+		                 struct intel_miptree_map *map,
+		                 unsigned int level, unsigned int slice)
+{
+   unsigned offset = 0;
+   const unsigned cpp = _mesa_get_format_bytes(mt->format);
+
+   map->linear_mt = intel_miptree_create(brw, GL_TEXTURE_2D, mt->format,
+                                         0, 0,
+                                         map->x + map->w, map->h, 1,
+                                         0, MIPTREE_LAYOUT_TILING_NONE);
+
+   if (!map->linear_mt) {
+      fprintf(stderr, "Failed to allocate blit temporary\n");
+      goto fail;
+   }
+   map->stride = map->linear_mt->pitch;
+
+   if (!intel_miptree_blit(brw,
+                           mt, level, slice,
+                           0, map->y, false,
+                           map->linear_mt, 0, 0,
+                           0, 0, false,
+                           map->x + map->w, map->h, GL_COPY)) {
+      fprintf(stderr, "Failed to blit\n");
+      goto fail;
+   }
+
+   map->ptr = intel_miptree_map_raw(brw, map->linear_mt);
+
+   /* Set the map->ptr to pixel at (map->x, 0) */
+   offset = map->x * cpp;
+   map->ptr = (char *)map->ptr + offset;
+
+   DBG("%s: %d,%d %dx%d from mt %p (%s) %d,%d = %p/%d\n", __func__,
+       map->x, map->y, map->w, map->h,
+       mt, _mesa_get_format_name(mt->format),
+       level, slice, map->ptr, map->stride);
+
+   return;
+
+fail:
+   intel_miptree_release(&map->linear_mt);
+   map->ptr = NULL;
+   map->stride = 0;
+}
+
+/**
  * "Map" a buffer by copying it to an untiled temporary using MOVNTDQA.
  */
 #if defined(USE_SSE41)
@@ -2767,7 +2822,14 @@ intel_miptree_map(struct brw_context *brw,
    } else if (mt->stencil_mt && !(mode & BRW_MAP_DIRECT_BIT)) {
       intel_miptree_map_depthstencil(brw, mt, map, level, slice);
    } else if (use_intel_mipree_map_blit(brw, mt, mode, level, slice)) {
-      intel_miptree_map_blit(brw, mt, map, level, slice);
+      /* Fast copy blit requires the start pixel to be Oword aligned. Handle
+       * the cases which don't meet this requirement.
+       */
+      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE &&
+          ((x * mt->cpp) & 15))
+         intel_miptree_map_unaligned_blit(brw, mt, map, level, slice);
+      else
+         intel_miptree_map_blit(brw, mt, map, level, slice);
 #if defined(USE_SSE41)
    } else if (!(mode & GL_MAP_WRITE_BIT) &&
               !mt->compressed && cpu_has_sse4_1 &&
