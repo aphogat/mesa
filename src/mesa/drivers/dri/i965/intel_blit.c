@@ -180,6 +180,47 @@ intel_miptree_blit_compatible_formats(mesa_format src, mesa_format dst)
    return false;
 }
 
+static struct intel_mipmap_tree *
+intel_miptree_blit_to_linear(struct brw_context *brw,
+                             struct intel_mipmap_tree *mt,
+                             int level, int slice,
+                             uint32_t x, uint32_t y, bool flip,
+                             uint32_t width, uint32_t height)
+{
+   struct intel_mipmap_tree *mt_linear =
+      intel_miptree_create(brw, GL_TEXTURE_2D, mt->format,
+                           /* first_level */ 0,
+                           /* last_level */ 0,
+                           width, height, 1,
+                           /* samples */ 0,
+                           MIPTREE_LAYOUT_TILING_NONE);
+
+   if (!mt_linear)
+      goto fail;
+
+    /* Blit from src_mt to mt_linear */
+   if (!intel_miptree_blit(brw,
+                           mt, level, slice,
+                           x, y, flip,
+                           mt_linear, 0, 0,
+                           0, 0, false,
+                           width, height, GL_COPY))
+      goto fail;
+
+   return mt_linear;
+
+fail:
+   if (!mt_linear)
+      fprintf(stderr, "Failed to allocate blit temporary\n");
+   else
+      fprintf(stderr, "Failed to blit to temporary buffer\n");
+
+   if (mt_linear)
+      intel_miptree_release(&mt_linear);
+
+   return NULL;
+}
+
 /**
  * Implements a rectangular block transfer (blit) of pixels between two
  * miptrees.
