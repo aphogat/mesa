@@ -201,9 +201,11 @@ intelTexSubImage(struct gl_context * ctx,
                  const struct gl_pixelstore_attrib *packing)
 {
    struct intel_texture_image *intelImage = intel_texture_image(texImage);
+   struct brw_context *brw = brw_context(ctx);
    bool ok;
 
    bool tex_busy = intelImage->mt && drm_intel_bo_busy(intelImage->mt->bo);
+   bool create_pbo = tex_busy;
 
    DBG("%s mesa_format %s target %s format %s type %s level %d %dx%dx%d\n",
        __func__, _mesa_get_format_name(texImage->TexFormat),
@@ -211,10 +213,14 @@ intelTexSubImage(struct gl_context * ctx,
        _mesa_enum_to_string(format), _mesa_enum_to_string(type),
        texImage->Level, texImage->Width, texImage->Height, texImage->Depth);
 
+   if (brw->gen >= 9)
+      create_pbo = tex_busy || (intelImage->mt &&
+                   intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE);
+
    ok = _mesa_meta_pbo_TexSubImage(ctx, dims, texImage,
                                    xoffset, yoffset, zoffset,
                                    width, height, depth, format, type,
-                                   pixels, false, tex_busy, packing);
+                                   pixels, false, create_pbo, packing);
    if (ok)
       return;
 
