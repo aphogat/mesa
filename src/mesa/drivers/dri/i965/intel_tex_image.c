@@ -483,13 +483,19 @@ intel_get_tex_sub_image(struct gl_context *ctx,
 {
    struct brw_context *brw = brw_context(ctx);
    bool ok;
+   bool create_pbo = false;
 
    DBG("%s\n", __func__);
+
+   if (brw->gen >= 9) {
+      struct intel_texture_image *intelImage = intel_texture_image(texImage);
+      create_pbo = intelImage->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
+   }
 
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 3, texImage,
                                      xoffset, yoffset, zoffset,
                                      width, height, depth, format, type,
-                                     pixels, false /* create_pbo */,
+                                     pixels, create_pbo,
                                      false /* pbo_uses_src_format_type */,
                                      &ctx->Pack)) {
       /* Flush to guarantee coherency between the render cache and other
