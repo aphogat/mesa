@@ -263,6 +263,15 @@ intelReadPixels(struct gl_context * ctx,
       return;
    }
 
+   /* Try with pbo using src format and type. */
+   if (brw->gen >= 9 && create_pbo &&
+       _mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
+                                     height, 1, format, type, pixels,
+                                     create_pbo,
+                                     true /* pbo_uses_src_format_type */,
+                                     pack))
+      return;
+
    if (_mesa_is_bufferobj(ctx->Pack.BufferObj))
       perf_debug("%s: fallback to CPU mapping in PBO case\n", __func__);
 
