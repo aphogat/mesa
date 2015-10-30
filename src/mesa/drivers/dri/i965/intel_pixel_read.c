@@ -222,12 +222,21 @@ intelReadPixels(struct gl_context * ctx,
 
    struct brw_context *brw = brw_context(ctx);
    bool dirty;
+   bool create_pbo = false;
 
    DBG("%s\n", __func__);
 
+   if (brw->gen >= 9) {
+      const struct gl_renderbuffer *rb = ctx->ReadBuffer->_ColorReadBuffer;
+      const struct intel_renderbuffer *irb =
+         intel_renderbuffer((struct gl_renderbuffer *)rb);
+      if (irb && irb->mt)
+         create_pbo = irb->mt->tr_mode != INTEL_MIPTREE_TRMODE_NONE;
+   }
+
    if (_mesa_meta_pbo_GetTexSubImage(ctx, 2, NULL, x, y, 0, width,
                                      height, 1, format, type, pixels,
-                                     false /* create_pbo */,
+                                     create_pbo,
                                      false /* pbo_uses_src_format_type */,
                                      pack)) {
       /* _mesa_meta_pbo_GetTexSubImage() implements PBO transfers by
