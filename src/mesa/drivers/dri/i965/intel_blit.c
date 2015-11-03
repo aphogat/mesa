@@ -287,6 +287,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   0, dst_y, dst_flip,
                                   dst_x + width, height, GL_COPY);
 
+         printf("%s: aligned:src \ttr-mode-none:src \tblits:3\n", __FUNCTION__);
          intel_miptree_release(&dst_mt_linear);
       } else if (is_dst_tr_mode_none) {
          /* Blit src -> src_mt_linear */
@@ -305,6 +306,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   dst_x, dst_y, dst_flip,
                                   width, height, GL_COPY);
 
+         printf("%s: aligned:src \ttr-mode-none:dst \tblits:2\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
       } else {
          /* Blit src -> src_mt_linear */
@@ -343,6 +345,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   0, dst_y, dst_flip,
                                   dst_x + width, height, GL_COPY);
 
+         printf("%s: aligned:src \ttr-mode-none:none \tblits:4\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
          intel_miptree_release(&dst_mt_linear);
       }
@@ -366,6 +369,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   dst_x, dst_y, dst_flip,
                                   width, height, GL_COPY);
 
+         printf("%s: aligned:dst \ttr-mode-none:src \tblits:2\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
       } else if (is_dst_tr_mode_none) {
           /* Blit src -> src_mt_linear */
@@ -386,6 +390,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   dst_x, dst_y, dst_flip,
                                   width, height, GL_COPY);
 
+         printf("%s: aligned:dst \ttr-mode-none:dst \tblits:2\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
       } else {
          /* Blit src -> src_mt_linear */
@@ -426,6 +431,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   dst_x, dst_y, dst_flip,
                                   width, height, GL_COPY);
 
+         printf("%s: aligned:dst \ttr-mode-none:none \tblits:3\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
          intel_miptree_release(&dst_mt_linear);
       }
@@ -458,6 +464,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   0, dst_y, dst_flip,
                                   dst_x + width, height, GL_COPY);
 
+         printf("%s: aligned:none \ttr-mode-none:src \tblits:3\n", __FUNCTION__);
          intel_miptree_release(&dst_mt_linear);
       } else if (is_dst_tr_mode_none) {
          /* Blit src -> src_mt_linear */
@@ -478,6 +485,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   dst_x, dst_y, dst_flip,
                                   width, height, GL_COPY);
 
+         printf("%s: aligned:none \ttr-mode-none:dst \tblits:2\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
       } else {
          /* Blit src -> src_mt_linear */
@@ -513,6 +521,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
                                   0, dst_y, dst_flip,
                                   dst_x + width, height, GL_COPY);
 
+         printf("%s: aligned:none \ttr-mode-none:none \tblits:4\n", __FUNCTION__);
          intel_miptree_release(&src_mt_linear);
          intel_miptree_release(&dst_mt_linear);
       }

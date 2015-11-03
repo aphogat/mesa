@@ -2298,6 +2298,7 @@ intel_miptree_map_unaligned_blit(struct brw_context *brw,
    unsigned offset = 0;
    const unsigned cpp = _mesa_get_format_bytes(mt->format);
 
+   printf("%s\n", __FUNCTION__);
    map->linear_mt = intel_miptree_create(brw, GL_TEXTURE_2D, mt->format,
                                          0, 0,
                                          map->x + map->w, map->y + map->h, 1,
