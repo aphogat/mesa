@@ -2774,7 +2774,9 @@ intel_miptree_map(struct brw_context *brw,
               (mt->pitch % 16 == 0)) {
       intel_miptree_map_movntdqa(brw, mt, map, level, slice);
 #endif
-   } else {
+   }
+
+   if (map->ptr == NULL) {
       /* intel_miptree_map_gtt() doesn't support surfaces with Yf/Ys tiling. */
       assert(mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE);
       intel_miptree_map_gtt(brw, mt, map, level, slice);
