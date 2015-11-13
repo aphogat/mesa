@@ -2300,7 +2300,7 @@ intel_miptree_map_unaligned_blit(struct brw_context *brw,
 
    map->linear_mt = intel_miptree_create(brw, GL_TEXTURE_2D, mt->format,
                                          0, 0,
-                                         map->x + map->w, map->h, 1,
+                                         map->x + map->w, map->y + map->h, 1,
                                          0, MIPTREE_LAYOUT_TILING_NONE);
 
    if (!map->linear_mt) {
@@ -2311,10 +2311,10 @@ intel_miptree_map_unaligned_blit(struct brw_context *brw,
 
    if (!intel_miptree_blit(brw,
                            mt, level, slice,
-                           0, map->y, false,
+                           0, 0, false,
                            map->linear_mt, 0, 0,
                            0, 0, false,
-                           map->x + map->w, map->h, GL_COPY)) {
+                           map->x + map->w, map->y + map->h, GL_COPY)) {
       fprintf(stderr, "Failed to blit\n");
       goto fail;
    }
@@ -2322,7 +2322,7 @@ intel_miptree_map_unaligned_blit(struct brw_context *brw,
    map->ptr = intel_miptree_map_raw(brw, map->linear_mt);
 
    /* Set the map->ptr to pixel at (map->x, 0) */
-   offset = map->x * cpp;
+   offset = map->y * map->stride + map->x * cpp;
    map->ptr = (char *)map->ptr + offset;
 
    DBG("%s: %d,%d %dx%d from mt %p (%s) %d,%d = %p/%d\n", __func__,
