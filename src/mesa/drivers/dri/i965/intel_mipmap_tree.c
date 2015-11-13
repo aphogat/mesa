@@ -2355,8 +2355,8 @@ intel_miptree_unmap_unaligned_blit(struct brw_context *brw,
                                    map->linear_mt, 0, 0,
                                    0, 0, false,
                                    mt, level, slice,
-                                   0, map->y, false,
-                                   map->x + map->w, map->h, GL_COPY);
+                                   0, 0, false,
+                                   map->x + map->w, map->y + map->h, GL_COPY);
       WARN_ONCE(!ok, "Failed to blit from linear temporary mapping");
    }
 
