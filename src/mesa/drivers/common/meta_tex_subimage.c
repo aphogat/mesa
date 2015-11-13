@@ -74,7 +74,7 @@ create_texture_for_pbo(struct gl_context *ctx,
 {
    uint32_t pbo_format;
    GLenum internal_format;
-   unsigned row_stride;
+   unsigned row_stride, pitch;
    struct gl_buffer_object *buffer_obj;
    struct gl_texture_object *tex_obj;
    struct gl_texture_image *tex_image;
@@ -102,12 +102,13 @@ create_texture_for_pbo(struct gl_context *ctx,
    row_stride = _mesa_image_row_stride(packing, width, format, type);
 
    if (_mesa_is_bufferobj(packing->BufferObj)) {
+      pitch = row_stride;
       *tmp_pbo = NULL;
       buffer_obj = packing->BufferObj;
       first_pixel += (intptr_t)pixels;
    } else {
       bool is_pixel_pack = pbo_target == GL_PIXEL_PACK_BUFFER;
-
+      pitch = ALIGN(row_stride, 64);
       assert(create_pbo);
 
       *tmp_pbo = ctx->Driver.NewBufferObject(ctx, 0xDEADBEEF);
@@ -119,7 +120,7 @@ create_texture_for_pbo(struct gl_context *ctx,
        */
       if (is_pixel_pack)
          _mesa_buffer_data(ctx, *tmp_pbo, GL_NONE,
-                           last_pixel - first_pixel,
+                           last_pixel - first_pixel + (pitch - row_stride)*height,
                            NULL,
                            GL_STREAM_READ,
                            __func__);
@@ -159,7 +160,7 @@ create_texture_for_pbo(struct gl_context *ctx,
    if (!ctx->Driver.SetTextureStorageForBufferObject(ctx, tex_obj,
                                                      buffer_obj,
                                                      first_pixel,
-                                                     row_stride,
+                                                     pitch,
                                                      read_only)) {
       _mesa_DeleteTextures(1, tmp_tex);
       _mesa_reference_buffer_object(ctx, tmp_pbo, NULL);
