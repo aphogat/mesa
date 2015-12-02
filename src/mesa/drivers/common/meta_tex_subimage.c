@@ -26,6 +26,7 @@
  */
 
 #include "blend.h"
+#include "blit.h"
 #include "bufferobj.h"
 #include "buffers.h"
 #include "clear.h"
@@ -257,12 +258,10 @@ _mesa_meta_pbo_TexSubImage(struct gl_context *ctx, GLuint dims,
 
    _mesa_update_state(ctx);
 
-   if (_mesa_meta_BlitFramebuffer(ctx, ctx->ReadBuffer, ctx->DrawBuffer,
-                                  0, 0, width, height,
-                                  xoffset, yoffset,
-                                  xoffset + width, yoffset + height,
-                                  GL_COLOR_BUFFER_BIT, GL_NEAREST))
-      goto fail;
+   _mesa_BlitFramebuffer(0, 0, width, height,
+                         xoffset, yoffset,
+                         xoffset + width, yoffset + height,
+                         GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
    for (z = 1; z < depth; z++) {
       _mesa_meta_bind_fbo_image(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -270,12 +269,11 @@ _mesa_meta_pbo_TexSubImage(struct gl_context *ctx, GLuint dims,
 
       _mesa_update_state(ctx);
 
-      _mesa_meta_BlitFramebuffer(ctx, ctx->ReadBuffer, ctx->DrawBuffer,
-                                 0, z * image_height,
-                                 width, z * image_height + height,
-                                 xoffset, yoffset,
-                                 xoffset + width, yoffset + height,
-                                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
+      _mesa_BlitFramebuffer(0, z * image_height,
+                            width, z * image_height + height,
+                            xoffset, yoffset,
+                            xoffset + width, yoffset + height,
+                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
    }
 
    success = true;
