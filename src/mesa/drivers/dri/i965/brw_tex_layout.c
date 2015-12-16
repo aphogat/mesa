@@ -822,6 +822,7 @@ brw_miptree_layout(struct brw_context *brw,
       !mt->compressed &&
       _mesa_is_format_color_format(mt->format) &&
       (layout_flags & MIPTREE_LAYOUT_TILING_Y) &&
+      !(layout_flags & MIPTREE_LAYOUT_FORCE_HALIGN16) &&
       (bpp && _mesa_is_pow_two(bpp)) &&
       /* FIXME: To avoid piglit regressions keep the Yf/Ys tiling
        * disabled at the moment.
