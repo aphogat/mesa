@@ -790,15 +790,9 @@ intel_miptree_can_use_tr_mode(const struct intel_mipmap_tree *mt)
 {
    if (mt->tiling == I915_TILING_Y ||
        mt->tiling == (I915_TILING_Y | I915_TILING_X) ||
-       mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE) {
-      /* FIXME: Don't allow YS tiling at the moment. Using 64KB tiling
-       * for small textures might result in to memory wastage. Revisit
-       * this condition when we have more information about the specific
-       * cases where using YS over YF will be useful.
-       */
-      if (mt->tr_mode != INTEL_MIPTREE_TRMODE_YS)
+       mt->tr_mode == INTEL_MIPTREE_TRMODE_NONE)
          return true;
-   }
+
    return false;
 }
 
@@ -835,7 +829,7 @@ brw_miptree_layout(struct brw_context *brw,
    const uint32_t tr_mode[3] = {INTEL_MIPTREE_TRMODE_YF,
                                 INTEL_MIPTREE_TRMODE_YS,
                                 INTEL_MIPTREE_TRMODE_NONE};
-   int i = is_tr_mode_yf_ys_allowed ? 0 : ARRAY_SIZE(tr_mode) - 1;
+   int i = is_tr_mode_yf_ys_allowed ? 1 : ARRAY_SIZE(tr_mode) - 1;
 
    while (i < ARRAY_SIZE(tr_mode)) {
       if (brw->gen < 9)
