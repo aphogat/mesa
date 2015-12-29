@@ -340,29 +340,27 @@ static const struct gen_device_info gen_device_info_chv = {
       .max_gs_entries = 640,                        \
    }
 
-#define GEN9_FEATURES                               \
+#define GEN9_FEATURES(_gt, _slices)                 \
    GEN8_FEATURES,                                   \
-   GEN9_HW_INFO
+   GEN9_HW_INFO,                                    \
+   .gt = _gt, .num_slices = _slices
+
 
 static const struct gen_device_info gen_device_info_skl_gt1 = {
-   GEN9_FEATURES, .gt = 1,
-   .num_slices = 1,
-   .urb.size = 192,
+   GEN9_FEATURES(1, 1),
+   .urb.size = 192
 };
 
 static const struct gen_device_info gen_device_info_skl_gt2 = {
-   GEN9_FEATURES, .gt = 2,
-   .num_slices = 1,
+   GEN9_FEATURES(2, 1)
 };
 
 static const struct gen_device_info gen_device_info_skl_gt3 = {
-   GEN9_FEATURES, .gt = 3,
-   .num_slices = 2,
+   GEN9_FEATURES(3, 2)
 };
 
 static const struct gen_device_info gen_device_info_skl_gt4 = {
-   GEN9_FEATURES, .gt = 4,
-   .num_slices = 3,
+   GEN9_FEATURES(4, 3),
    /* From the "L3 Allocation and Programming" documentation:
     *
     * "URB is limited to 1008KB due to programming restrictions.  This is not a
@@ -371,16 +369,14 @@ static const struct gen_device_info gen_device_info_skl_gt4 = {
     * allocation of the L3 data array to provide 3*384KB=1152KB for URB, but
     * only 1008KB of this will be used."
     */
-   .urb.size = 1008 / 3,
+   .urb.size = 1008 / 3
 };
 
 static const struct gen_device_info gen_device_info_bxt = {
-   GEN9_FEATURES,
+   GEN9_FEATURES(1, 1),
    .is_broxton = 1,
-   .gt = 1,
    .has_llc = false,
 
-   .num_slices = 1,
    .max_vs_threads = 112,
    .max_tcs_threads = 112,
    .max_tes_threads = 112,
@@ -398,12 +394,10 @@ static const struct gen_device_info gen_device_info_bxt = {
 };
 
 static const struct gen_device_info gen_device_info_bxt_2x6 = {
-   GEN9_FEATURES,
+   GEN9_FEATURES(1, 1),
    .is_broxton = 1,
-   .gt = 1,
    .has_llc = false,
 
-   .num_slices = 1,
    .max_vs_threads = 56, /* XXX: guess */
    .max_tcs_threads = 56, /* XXX: guess */
    .max_tes_threads = 56,
@@ -419,6 +413,7 @@ static const struct gen_device_info gen_device_info_bxt_2x6 = {
       .max_gs_entries = 128,
    }
 };
+
 /*
  * Note: for all KBL SKUs, the PRM says SKL for GS entries, not SKL+.
  * There's no KBL entry. Using the default SKL (GEN9) GS entries value.
@@ -431,57 +426,37 @@ static const struct gen_device_info gen_device_info_bxt_2x6 = {
 #define  KBL_MAX_THREADS_PER_PSD 64
 
 static const struct gen_device_info gen_device_info_kbl_gt1 = {
-   GEN9_FEATURES,
-   .gt = 1,
+   GEN9_FEATURES(1, 1),
 
    .max_cs_threads = 7 * 6,
    .max_wm_threads = KBL_MAX_THREADS_PER_PSD * 2,
    .urb.size = 192,
-   .num_slices = 1,
 };
 
 static const struct gen_device_info gen_device_info_kbl_gt1_5 = {
-   GEN9_FEATURES,
-   .gt = 1,
+   GEN9_FEATURES(1, 1),
 
    .max_cs_threads = 7 * 6,
    .max_wm_threads = KBL_MAX_THREADS_PER_PSD * 3,
-   .num_slices = 1,
 };
 
 static const struct gen_device_info gen_device_info_kbl_gt2 = {
-   GEN9_FEATURES,
-   .gt = 2,
+   GEN9_FEATURES(2, 1),
 
    .max_wm_threads = KBL_MAX_THREADS_PER_PSD * 3,
-   .num_slices = 1,
 };
 
 static const struct gen_device_info gen_device_info_kbl_gt3 = {
-   GEN9_FEATURES,
-   .gt = 3,
+   GEN9_FEATURES(3, 2),
 
    .max_wm_threads = KBL_MAX_THREADS_PER_PSD * 6,
-   .num_slices = 2,
 };
 
 static const struct gen_device_info gen_device_info_kbl_gt4 = {
-   GEN9_FEATURES,
-   .gt = 4,
+   GEN9_FEATURES(4, 3),
 
    .max_wm_threads = KBL_MAX_THREADS_PER_PSD * 9,
-   /*
-    * From the "L3 Allocation and Programming" documentation:
-    *
-    * "URB is limited to 1008KB due to programming restrictions.  This
-    *  is not a restriction of the L3 implementation, but of the FF and
-    *  other clients.  Therefore, in a GT4 implementation it is
-    *  possible for the programmed allocation of the L3 data array to
-    *  provide 3*384KB=1152KB for URB, but only 1008KB of this
-    *  will be used."
-    */
-   .urb.size = 1008 / 3,
-   .num_slices = 3,
+   .urb.size = 1008 / 3, /* XXX: See SKL GT4 */
 };
 
 const bool
