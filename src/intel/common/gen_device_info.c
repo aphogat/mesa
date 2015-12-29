@@ -322,15 +322,8 @@ static const struct gen_device_info gen_device_info_chv = {
    }
 };
 
-#define GEN9_FEATURES                               \
+#define GEN9_HW_INFO                                \
    .gen = 9,                                        \
-   .has_hiz_and_separate_stencil = true,            \
-   .has_resource_streamer = true,                   \
-   .must_use_separate_stencil = true,               \
-   .has_llc = true,                                 \
-   .has_pln = true,                                 \
-   .supports_simd16_3src = true,                    \
-   .has_surface_tile_offset = true,                 \
    .max_vs_threads = 336,                           \
    .max_gs_threads = 336,                           \
    .max_tcs_threads = 336,                          \
@@ -346,6 +339,10 @@ static const struct gen_device_info gen_device_info_chv = {
       .max_tes_entries = 1120,                      \
       .max_gs_entries = 640,                        \
    }
+
+#define GEN9_FEATURES                               \
+   GEN8_FEATURES,                                   \
+   GEN9_HW_INFO
 
 static const struct gen_device_info gen_device_info_skl_gt1 = {
    GEN9_FEATURES, .gt = 1,
