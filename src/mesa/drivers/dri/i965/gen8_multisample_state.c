@@ -37,6 +37,11 @@ gen8_emit_3dstate_multisample(struct brw_context *brw, unsigned num_samples)
 
    unsigned log2_samples = ffs(MAX2(num_samples, 1)) - 1;
 
+   if (brw->gen == 10 && brw->np_state_programmed) {
+      gen10_emit_wm_workaround_flush(brw);
+      brw->np_state_programmed = false;
+   }
+
    BEGIN_BATCH(2);
    OUT_BATCH(GEN8_3DSTATE_MULTISAMPLE << 16 | (2 - 2));
    OUT_BATCH(MS_PIXEL_LOCATION_CENTER | log2_samples << 1);
@@ -49,6 +54,11 @@ gen8_emit_3dstate_multisample(struct brw_context *brw, unsigned num_samples)
 void
 gen8_emit_3dstate_sample_pattern(struct brw_context *brw)
 {
+   if (brw->gen == 10 && brw->np_state_programmed) {
+      gen10_emit_wm_workaround_flush(brw);
+      brw->np_state_programmed = false;
+   }
+
    BEGIN_BATCH(9);
    OUT_BATCH(_3DSTATE_SAMPLE_PATTERN << 16 | (9 - 2));
 

@@ -238,6 +238,9 @@ genX(upload_polygon_stipple)(struct brw_context *brw)
             poly.PatternRow[i] = ctx->PolygonStipple[i];
       }
    }
+
+   if (brw->gen == 10)
+      brw->np_state_programmed = true;
 }
 
 static const struct brw_tracked_state genX(polygon_stipple) = {
@@ -275,6 +278,9 @@ genX(upload_polygon_stipple_offset)(struct brw_context *brw)
             (32 - (_mesa_geometric_height(ctx->DrawBuffer) & 31)) & 31;
       }
    }
+
+   if (brw->gen == 10)
+      brw->np_state_programmed = true;
 }
 
 static const struct brw_tracked_state genX(polygon_stipple_offset) = {
@@ -303,6 +309,9 @@ genX(upload_line_stipple)(struct brw_context *brw)
       line.LineStippleInverseRepeatCount = 1.0f / ctx->Line.StippleFactor;
       line.LineStippleRepeatCount = ctx->Line.StippleFactor;
    }
+
+   if (brw->gen == 10)
+      brw->np_state_programmed = true;
 }
 
 static const struct brw_tracked_state genX(line_stipple) = {
@@ -3217,6 +3226,9 @@ genX(upload_3dstate_so_decl_list)(struct brw_context *brw,
             .Stream3Decl = so_decl[3][i],
          });
    }
+
+   if (brw->gen == 10)
+      gen10_emit_wm_workaround_flush(brw);
 }
 
 static void
@@ -3876,6 +3888,11 @@ genX(upload_raster)(struct brw_context *brw)
 
    /* _NEW_POINT */
    struct gl_point_attrib *point = &ctx->Point;
+
+   if (brw->gen == 10 && brw->np_state_programmed) {
+      gen10_emit_wm_workaround_flush(brw);
+      brw->np_state_programmed = false;
+   }
 
    brw_batch_emit(brw, GENX(3DSTATE_RASTER), raster) {
       if (polygon->_FrontBit == render_to_fbo)

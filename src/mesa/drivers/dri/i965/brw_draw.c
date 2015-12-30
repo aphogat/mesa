@@ -280,6 +280,9 @@ brw_emit_prim(struct brw_context *brw,
 
    if (brw->always_flush_cache)
       brw_emit_mi_flush(brw);
+
+   if (brw->gen == 10)
+      brw->np_state_programmed = false;
 }
 
 

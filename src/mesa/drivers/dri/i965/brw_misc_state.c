@@ -550,6 +550,9 @@ brw_upload_invariant_state(struct brw_context *brw)
       OUT_BATCH(0);
       OUT_BATCH(0);
       ADVANCE_BATCH();
+
+      if (brw->gen == 10)
+         brw->np_state_programmed = true;
    }
 
    const uint32_t _3DSTATE_VF_STATISTICS =

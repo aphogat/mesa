@@ -272,6 +272,37 @@ gen7_emit_cs_stall_flush(struct brw_context *brw)
 }
 
 /**
+ * From Gen10 Workarounds page in h/w specs:
+ * WaPSRandomCSNotDone:
+ * "The only state that can cause an issue is the state that is sent to
+ * CPSS which are:
+ * 3DSTATE_SAMPLE_PATTERN
+ * 3DSTATE_MULTISAMPLE
+ * 3DSTATE_RASTER
+ * 3DSTATE_CPS
+ *
+ * Non-pipeline state that is owned by WM:
+ * 3DSTATE_AA_LINE_PARAMETERS
+ * 3DSTATE_LINE_STIPPLE
+ * 3DSTATE_POLY_STIPPLE_OFFSET
+ * 3DSTATE_POLY_STIPPLE_PATTERN
+ * 3DSTATE_SLICE_TABLE_STATE_POINTERS
+ *
+ * 3 Workarounds required:
+ * 1. Set flag when any NP state owned by WM is programmed (see list above)
+ * 2. Clear flag in the case a 3DPRIMITIVE is programmed
+ * 3. Prior to programming any of the pipeline state that is passed to CPS
+ *    and flag is set, add PIPE_CONTROL with CS stall bit set prior to that
+ *    command and clear the flag."
+ */
+void
+gen10_emit_wm_workaround_flush(struct brw_context *brw)
+{
+   assert(brw->gen == 10);
+   brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
+}
+
+/**
  * Emits a PIPE_CONTROL with a non-zero post-sync operation, for
  * implementing two workarounds on gen6.  From section 1.4.7.1
  * "PIPE_CONTROL" of the Sandy Bridge PRM volume 2 part 1:
