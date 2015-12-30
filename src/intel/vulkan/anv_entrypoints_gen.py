@@ -230,6 +230,7 @@ anv_resolve_entrypoint(uint32_t index)
    }
 
    switch (dispatch_devinfo->gen) {
+   case 10:
    case 9:
       if (gen9_layer.entrypoints[index])
          return gen9_layer.entrypoints[index];

@@ -75,6 +75,7 @@ static const struct surface_state_info surface_state_infos[] = {
    [7] = {8,  32, 1,  6,  GEN7_MOCS_L3, GEN7_MOCS_L3},
    [8] = {13, 64, 8,  10, BDW_MOCS_WB,  BDW_MOCS_PTE},
    [9] = {16, 64, 8,  10, SKL_MOCS_WB,  SKL_MOCS_PTE},
+   [10] = {16, 64, 8,  10, SKL_MOCS_WB,  SKL_MOCS_PTE},
 };
 
 static void

@@ -92,6 +92,7 @@ brw_blorp_init(struct brw_context *brw)
       brw->blorp.exec = gen8_blorp_exec;
       break;
    case 9:
+   case 10:
       brw->blorp.mocs.tex = SKL_MOCS_WB;
       brw->blorp.mocs.rb = SKL_MOCS_PTE;
       brw->blorp.mocs.vb = SKL_MOCS_WB;

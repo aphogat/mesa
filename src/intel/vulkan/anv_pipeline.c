@@ -1189,6 +1189,7 @@ anv_graphics_pipeline_create(
    case 8:
       return gen8_graphics_pipeline_create(_device, cache, pCreateInfo, extra, pAllocator, pPipeline);
    case 9:
+   case 10:
       return gen9_graphics_pipeline_create(_device, cache, pCreateInfo, extra, pAllocator, pPipeline);
    default:
       unreachable("unsupported gen\n");
@@ -1242,6 +1243,7 @@ static VkResult anv_compute_pipeline_create(
    case 8:
       return gen8_compute_pipeline_create(_device, cache, pCreateInfo, pAllocator, pPipeline);
    case 9:
+   case 10:
       return gen9_compute_pipeline_create(_device, cache, pCreateInfo, pAllocator, pPipeline);
    default:
       unreachable("unsupported gen\n");

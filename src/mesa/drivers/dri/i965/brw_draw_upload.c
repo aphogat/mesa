@@ -720,6 +720,7 @@ brw_emit_vertex_buffer_state(struct brw_context *brw,
       dw0 |= BDW_MOCS_WB << 16;
       break;
    case 9:
+   case 10:
       dw0 |= SKL_MOCS_WB << 16;
       break;
    }

@@ -459,6 +459,60 @@ static const struct gen_device_info gen_device_info_kbl_gt4 = {
    .urb.size = 1008 / 3, /* XXX: See SKL GT4 */
 };
 
+#define GEN10_HW_INFO                               \
+   .gen = 10,                                       \
+   .max_vs_threads = 728,                           \
+   .max_gs_threads = 432,                           \
+   .max_tcs_threads = 432,                          \
+   .max_tes_threads = 624,                          \
+   .max_wm_threads = 64 * 12,                       \
+   .max_cs_threads = 56,                            \
+   .urb = {                                         \
+      .size = 256,                                  \
+      .min_vs_entries = 64,                         \
+      .max_vs_entries = 3936,                       \
+      .max_tcs_entries = 896,                       \
+      .max_tes_entries = 2064,                      \
+      .max_gs_entries = 832,                        \
+   }
+
+#define GEN10_FEATURES(_gt, _slices, _l3)           \
+   GEN8_FEATURES,                                   \
+   GEN10_HW_INFO,                                   \
+   .gt = _gt, .num_slices = _slices, .l3_banks = _l3
+
+static const struct gen_device_info gen_device_info_cnl_2x8 = {
+   /* GT0.5 */
+   GEN10_FEATURES(1, 1, 2)
+};
+
+static const struct gen_device_info gen_device_info_cnl_3x8 = {
+   /* GT1 */
+   GEN10_FEATURES(1, 1, 3)
+};
+
+static const struct gen_device_info gen_device_info_cnl_4x8 = {
+   /* GT 1.5 */
+   GEN10_FEATURES(1, 2, 6)
+};
+
+static const struct gen_device_info gen_device_info_cnl_5x8 = {
+   /* GT2 */
+   GEN10_FEATURES(2, 2, 6)
+};
+
+static const struct gen_device_info gen_device_info_cnl_gt1 = {
+   GEN10_FEATURES(1, 1, 3)
+};
+
+static const struct gen_device_info gen_device_info_cnl_gt2 = {
+   GEN10_FEATURES(2, 2, 6)
+};
+
+static const struct gen_device_info gen_device_info_cnl_gt3 = {
+   GEN10_FEATURES(3, 4, 12)
+};
+
 const bool
 gen_get_device_info(int devid, struct gen_device_info *devinfo)
 {

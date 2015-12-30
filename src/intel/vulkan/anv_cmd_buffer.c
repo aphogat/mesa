@@ -365,6 +365,7 @@ anv_cmd_buffer_emit_state_base_address(struct anv_cmd_buffer *cmd_buffer)
    case 8:
       return gen8_cmd_buffer_emit_state_base_address(cmd_buffer);
    case 9:
+   case 10:
       return gen9_cmd_buffer_emit_state_base_address(cmd_buffer);
    default:
       unreachable("unsupported gen\n");
@@ -725,6 +726,7 @@ anv_cmd_buffer_alloc_null_surface_state(struct anv_cmd_buffer *cmd_buffer,
    case 8:
       return gen8_cmd_buffer_alloc_null_surface_state(cmd_buffer, fb);
    case 9:
+   case 10:
       return gen9_cmd_buffer_alloc_null_surface_state(cmd_buffer, fb);
    default:
       unreachable("Invalid hardware generation");
@@ -1078,6 +1080,7 @@ anv_cmd_buffer_set_subpass(struct anv_cmd_buffer *cmd_buffer,
       gen8_cmd_buffer_set_subpass(cmd_buffer, subpass);
       break;
    case 9:
+   case 10:
       gen9_cmd_buffer_set_subpass(cmd_buffer, subpass);
       break;
    default:

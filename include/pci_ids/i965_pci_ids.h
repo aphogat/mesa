@@ -163,3 +163,23 @@ CHIPSET(0x1A84, bxt,     "Intel(R) HD Graphics (Broxton)")
 CHIPSET(0x1A85, bxt_2x6, "Intel(R) HD Graphics (Broxton 2x6)")
 CHIPSET(0x5A84, bxt,     "Intel(R) HD Graphics (Broxton)")
 CHIPSET(0x5A85, bxt_2x6, "Intel(R) HD Graphics (Broxton 2x6)")
+CHIPSET(0x5A49, cnl_2x8, "Intel(R) HD Graphics (Cannonlake 2x8 GT0.5)")
+CHIPSET(0x5A4A, cnl_2x8, "Intel(R) HD Graphics (Cannonlake 2x8 GT0.5)")
+CHIPSET(0x5A41, cnl_3x8, "Intel(R) HD Graphics (Cannonlake 3x8 GT1)")
+CHIPSET(0x5A42, cnl_3x8, "Intel(R) HD Graphics (Cannonlake 3x8 GT1)")
+CHIPSET(0x5A44, cnl_3x8, "Intel(R) HD Graphics (Cannonlake 3x8 GT1)")
+CHIPSET(0x5A59, cnl_4x8, "Intel(R) HD Graphics (Cannonlake 4x8 GT1.5)")
+CHIPSET(0x5A5A, cnl_4x8, "Intel(R) HD Graphics (Cannonlake 4x8 GT1.5)")
+CHIPSET(0x5A5C, cnl_4x8, "Intel(R) HD Graphics (Cannonlake 4x8 GT1.5)") /* or GT2? */
+CHIPSET(0x5A50, cnl_5x8, "Intel(R) HD Graphics (Cannonlake 5x8 GT2)")
+CHIPSET(0x5A51, cnl_5x8, "Intel(R) HD Graphics (Cannonlake 5x8 GT2)")
+CHIPSET(0x5A52, cnl_5x8, "Intel(R) HD Graphics (Cannonlake 5x8 GT2)")
+CHIPSET(0x5A54, cnl_5x8, "Intel(R) HD Graphics (Cannonlake 5x8 GT2)")
+CHIPSET(0x5A47, cnl_gt1, "NOT POR Intel(R) HD Graphics (Cannonlake GT1)") /* Server */
+CHIPSET(0x5A46, cnl_gt1, "NOT POR Intel(R) HD Graphics (Cannonlake GT1)") /* Workstation */
+CHIPSET(0x5A57, cnl_gt2, "NOT POR Intel(R) HD Graphics (Cannonlake GT2)") /* Server */
+CHIPSET(0x5A56, cnl_gt2, "NOT POR Intel(R) HD Graphics (Cannonlake GT2)") /* Workstation */
+CHIPSET(0x5A61, cnl_gt3, "Intel(R) HD Graphics (Cannonlake GT3)")
+CHIPSET(0x5A65, cnl_gt3, "Intel(R) HD Graphics (Cannonlake GT3)") /* Desktop */
+CHIPSET(0x5A67, cnl_gt3, "Intel(R) HD Graphics (Cannonlake GT3)") /* Server */
+CHIPSET(0x5A66, cnl_gt3, "Intel(R) HD Graphics (Cannonlake GT3)") /* Workstation */
