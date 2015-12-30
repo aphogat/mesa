@@ -361,7 +361,7 @@ intel_miptree_unaligned_blit(struct brw_context *brw,
          if (!src_mt_linear)
             return false;
 
-          /* Blit dst_mt_linear -> dst */
+          /* Blit src_mt_linear -> dst */
           ret = intel_miptree_blit(brw,
                                   src_mt_linear, 0, 0,
                                   0, 0, false,
