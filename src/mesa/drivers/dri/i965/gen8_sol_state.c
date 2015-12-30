@@ -64,6 +64,11 @@ gen8_upload_3dstate_so_buffers(struct brw_context *brw)
          OUT_BATCH(0);
          OUT_BATCH(0);
          ADVANCE_BATCH();
+
+         /* WaFillMeInCNL: 1939080 */
+         if (brw->gen == 10)
+            brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
+
          continue;
       }
 
@@ -90,6 +95,10 @@ gen8_upload_3dstate_so_buffers(struct brw_context *brw)
       else
          OUT_BATCH(0xFFFFFFFF); /* Use offset_bo as the "Stream Offset." */
       ADVANCE_BATCH();
+
+      /* WaFillMeInCNL: 1939080 */
+      if (brw->gen == 10)
+         brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
    }
    brw_obj->zero_offsets = false;
 }

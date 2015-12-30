@@ -139,6 +139,10 @@ gen7_emit_push_constant_state(struct brw_context *brw, unsigned vs_size,
     */
    if (brw->gen < 8 && !brw->is_haswell && !brw->is_baytrail)
       gen7_emit_cs_stall_flush(brw);
+
+   /* WaFillMeInCNL: 1939080 */
+   if (brw->gen == 10)
+      brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
 }
 
 const struct brw_tracked_state gen7_push_constant_space = {

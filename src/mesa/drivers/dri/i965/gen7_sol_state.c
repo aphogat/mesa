@@ -212,6 +212,9 @@ gen7_upload_3dstate_so_decl_list(struct brw_context *brw,
    }
 
    ADVANCE_BATCH();
+
+   if (brw->gen == 10)
+      brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
 }
 
 static bool

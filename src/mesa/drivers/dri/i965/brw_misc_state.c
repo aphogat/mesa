@@ -58,6 +58,10 @@ upload_drawing_rect(struct brw_context *brw)
    OUT_BATCH(((fb_width - 1) & 0xffff) | ((fb_height - 1) << 16));
    OUT_BATCH(0);
    ADVANCE_BATCH();
+
+   /* WaFillMeInCNL: 1939080 */
+   if (brw->gen == 10)
+      brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
 }
 
 const struct brw_tracked_state brw_drawing_rect = {
@@ -783,6 +787,10 @@ upload_polygon_stipple_offset(struct brw_context *brw)
    else
       OUT_BATCH(0);
    ADVANCE_BATCH();
+
+   /* WaFillMeInCNL: 1939080 */
+   if (brw->gen == 10)
+      brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
 }
 
 const struct brw_tracked_state brw_polygon_stipple_offset = {
@@ -815,6 +823,10 @@ upload_aa_line_parameters(struct brw_context *brw)
    OUT_BATCH(0);
    OUT_BATCH(0);
    ADVANCE_BATCH();
+
+   /* WaFillMeInCNL: 1939080 */
+   if (brw->gen == 10)
+         brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
 }
 
 const struct brw_tracked_state brw_aa_line_parameters = {
@@ -853,6 +865,10 @@ upload_line_stipple(struct brw_context *brw)
       tmpi = tmp * (1<<13);
       OUT_BATCH(tmpi << 16 | ctx->Line.StippleFactor);
    }
+
+   /* WaFillMeInCNL: 1939080 */
+   if (brw->gen == 10)
+      brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
 
    ADVANCE_BATCH();
 }
