@@ -373,7 +373,8 @@ brw_emit_mi_flush(struct brw_context *brw)
                   PIPE_CONTROL_DEPTH_CACHE_FLUSH |
                   PIPE_CONTROL_VF_CACHE_INVALIDATE |
                   PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE |
-                  PIPE_CONTROL_CS_STALL;
+                  PIPE_CONTROL_CS_STALL |
+                  PIPE_CONTROL_DATA_CACHE_FLUSH;
       }
       brw_emit_pipe_control_flush(brw, flags);
    }
