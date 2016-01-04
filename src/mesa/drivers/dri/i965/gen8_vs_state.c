@@ -72,7 +72,11 @@ upload_vs_state(struct brw_context *brw)
 
    uint32_t simd8_enable = prog_data->dispatch_mode == DISPATCH_MODE_SIMD8 ?
       GEN8_VS_SIMD8_ENABLE : 0;
-   OUT_BATCH(((devinfo->max_vs_threads - 1) << HSW_VS_MAX_THREADS_SHIFT) |
+
+   uint32_t threads = (devinfo->max_vs_threads - 1);
+   threads <<= brw->gen >= 10 ? GEN10_VS_MAX_THREADS_SHIFT :
+                                HSW_VS_MAX_THREADS_SHIFT;
+   OUT_BATCH(threads |
              GEN6_VS_STATISTICS_ENABLE |
              simd8_enable |
              GEN6_VS_ENABLE);

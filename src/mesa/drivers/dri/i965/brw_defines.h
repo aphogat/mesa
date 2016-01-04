@@ -2063,6 +2063,7 @@ enum brw_message_target {
 /* DW5 */
 # define GEN6_VS_MAX_THREADS_SHIFT			25
 # define HSW_VS_MAX_THREADS_SHIFT			23
+# define GEN10_VS_MAX_THREADS_SHIFT                     22
 # define GEN6_VS_STATISTICS_ENABLE			(1 << 10)
 # define GEN6_VS_CACHE_DISABLE				(1 << 1)
 # define GEN6_VS_ENABLE					(1 << 0)
