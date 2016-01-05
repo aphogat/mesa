@@ -166,6 +166,12 @@ gen7_emit_urb_state(struct brw_context *brw,
                     unsigned nr_gs_entries,
                     unsigned gs_size, unsigned gs_start)
 {
+   /* Software shall not program an allocation size that specifies a size that
+    * is a multiple of 3 64B (512-bit) cachelines.
+    */
+   assert(brw->gen != 10 || vs_size % 3);
+
+
    BEGIN_BATCH(8);
    OUT_BATCH(_3DSTATE_URB_VS << 16 | (2 - 2));
    OUT_BATCH(nr_vs_entries |
