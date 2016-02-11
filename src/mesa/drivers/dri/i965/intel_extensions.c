@@ -415,6 +415,9 @@ intelInitExtensions(struct gl_context *ctx)
       ctx->Extensions.MESA_shader_framebuffer_fetch = true;
    }
 
+   if (brw->gen >= 10)
+      ctx->Extensions.OES_texture_compression_astc = true;
+
    if (ctx->API == API_OPENGL_CORE)
       ctx->Extensions.ARB_base_instance = true;
    if (ctx->API != API_OPENGL_CORE)
