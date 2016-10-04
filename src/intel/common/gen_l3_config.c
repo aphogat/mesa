@@ -258,7 +258,8 @@ get_l3_way_size(const struct gen_device_info *devinfo)
    if (devinfo->is_baytrail)
       return 2;
 
-   else if (devinfo->is_cherryview || devinfo->gt == 1)
+   /* XXX: Cherryview and Broxton are always gt1 */
+   else if (devinfo->gt == 1)
       return 4;
 
    else
