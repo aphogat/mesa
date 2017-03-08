@@ -561,7 +561,6 @@ static const struct gen_device_info gen_device_info_glk_2x6 = {
    .max_gs_threads = 432,                           \
    .max_tcs_threads = 432,                          \
    .max_tes_threads = 624,                          \
-   .max_wm_threads = 64 * 12,                       \
    .max_cs_threads = 56,                            \
    .urb = {                                         \
       .size = 256,                                  \
