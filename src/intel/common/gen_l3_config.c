@@ -102,6 +102,26 @@ static const struct gen_l3_config chv_l3_configs[] = {
 };
 
 /**
+ * On CNL, RO clients are merged and shared with read/write space. As a result
+ * we have fewer allocation parameters. Also, programming does not require any
+ * back scaling. Programming simply works in 2k increments and is scaled by the
+ * hardware.
+ */
+static const struct gen_l3_config cnl_l3_configs[] = {
+   /* SLM URB Rest  DC  RO */
+   {{  0, 64, 64,  0,  0 }},
+   {{  0, 64,  0, 16, 48 }},
+   {{  0, 48,  0, 16, 64 }},
+   {{  0, 32,  0,  0, 96 }},
+   {{  0, 32, 96,  0,  0 }},
+   {{  0, 32,  0, 16, 80 }},
+   {{ 32, 16, 80,  0,  0 }},
+   {{ 32, 16,  0, 64, 16 }},
+   {{ 32,  0, 96,  0,  0 }},
+   {{ 0 }}
+};
+
+/**
  * Return a zero-terminated array of validated L3 configurations for the
  * specified device.
  */
@@ -116,8 +136,10 @@ get_l3_configs(const struct gen_device_info *devinfo)
       return (devinfo->is_cherryview ? chv_l3_configs : bdw_l3_configs);
 
    case 9:
-   case 10:
       return chv_l3_configs;
+
+   case 10:
+      return cnl_l3_configs;
 
    default:
       unreachable("Not implemented");
@@ -258,12 +280,19 @@ get_l3_way_size(const struct gen_device_info *devinfo)
    if (devinfo->is_baytrail)
       return 2;
 
+   /* Way size is actually 6 * num_slices, because it's 2k per bank, and
+    * normally 3 banks per slice. However, on CNL+ this information isn't needed
+    * to setup the URB/l3 configuration. We fudge the answer here and then use
+    * the scaling to fix it up later.
+    */
+   if (devinfo->gen >= 10)
+      return 2 * devinfo->l3_banks;
+
    /* XXX: Cherryview and Broxton are always gt1 */
-   else if (devinfo->gt == 1)
+   if (devinfo->gt == 1)
       return 4;
 
-   else
-      return 8 * devinfo->num_slices;
+   return 8 * devinfo->num_slices;
 }
 
 /**
@@ -273,6 +302,9 @@ get_l3_way_size(const struct gen_device_info *devinfo)
 static unsigned
 get_urb_size_scale(const struct gen_device_info *devinfo)
 {
+   if (devinfo->gen == 10)
+      return devinfo->l3_banks;
+
    return (devinfo->gen >= 8 ? devinfo->num_slices : 1);
 }
 
