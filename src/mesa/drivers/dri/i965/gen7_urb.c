@@ -170,7 +170,9 @@ gen7_emit_urb_state(struct brw_context *brw,
     * is a multiple of 3 64B (512-bit) cachelines.
     */
    assert(brw->gen != 10 || vs_size % 3);
-
+   assert(brw->gen != 10 || hs_size % 3);
+   assert(brw->gen != 10 || ds_size % 3);
+   assert(brw->gen != 10 || gs_size % 3);
 
    BEGIN_BATCH(8);
    OUT_BATCH(_3DSTATE_URB_VS << 16 | (2 - 2));
