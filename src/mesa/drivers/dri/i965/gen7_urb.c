@@ -201,7 +201,15 @@ static void
 upload_urb(struct brw_context *brw)
 {
    /* BRW_NEW_VS_PROG_DATA */
-   const unsigned vs_size = MAX2(brw->vs.prog_data->base.urb_entry_size, 1);
+   unsigned vs_size = MAX2(brw->vs.prog_data->base.urb_entry_size, 1);
+
+   /* Software shall not program an allocation size that specifies a size that
+    * is a multiple of 3 64B (512-bit) cachelines. This also applies to
+    * {gs, hs, ds}_size.
+    */
+   if (vs_size % 3 == 0)
+      vs_size++;
+
    /* BRW_NEW_GEOMETRY_PROGRAM, BRW_NEW_GS_PROG_DATA */
    const bool gs_present = brw->geometry_program;
    /* BRW_NEW_TESS_PROGRAMS */
@@ -222,13 +230,25 @@ gen7_upload_urb(struct brw_context *brw, unsigned vs_size,
    unsigned vs_entry_size_bytes = vs_size * 64;
    /* BRW_NEW_GEOMETRY_PROGRAM, BRW_NEW_GS_PROG_DATA */
    unsigned gs_size = gs_present ? brw->gs.prog_data->base.urb_entry_size : 1;
+
+   if (gs_size % 3 == 0)
+      gs_size++;
+
    unsigned gs_entry_size_bytes = gs_size * 64;
 
    /* BRW_NEW_TCS_PROG_DATA */
    unsigned hs_size = tess_present ? brw->tcs.prog_data->base.urb_entry_size : 1;
+
+   if (hs_size % 3 == 0)
+      hs_size++;
+
    unsigned hs_entry_size_bytes = hs_size * 64;
    /* BRW_NEW_TES_PROG_DATA */
    unsigned ds_size = tess_present ? brw->tes.prog_data->base.urb_entry_size : 1;
+
+   if (ds_size % 3 == 0)
+      ds_size++;
+
    unsigned ds_entry_size_bytes = ds_size * 64;
 
    /* If we're just switching between programs with the same URB requirements,
