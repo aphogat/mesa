@@ -117,7 +117,8 @@ GENXML_XML_FILES = \
 	genxml/gen7.xml \
 	genxml/gen75.xml \
 	genxml/gen8.xml \
-	genxml/gen9.xml
+	genxml/gen9.xml \
+	genxml/gen10.xml
 
 GENXML_GENERATED_PACK_FILES = \
 	genxml/gen4_pack.h \
