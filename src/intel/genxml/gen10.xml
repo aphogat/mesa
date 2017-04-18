@@ -979,7 +979,7 @@
     <field name="Indirect Parameter Enable" start="10" end="10" type="bool"/>
     <field name="UAV Coherency Required" start="9" end="9" type="bool"/>
     <field name="Predicate Enable" start="8" end="8" type="bool"/>
-    <field name="DWord Length" start="0" end="7" type="uint"/>
+    <field name="DWord Length" start="0" end="7" type="uint" default="5"/>
     <field name="End Offset Enable" start="41" end="41" type="bool"/>
     <field name="Vertex Access Type" start="40" end="40" type="uint">
       <value name="SEQUENTIAL" value="0"/>
