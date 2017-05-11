@@ -1141,6 +1141,7 @@ VkResult anv_CreateDevice(
       result = gen8_init_device_state(device);
       break;
    case 9:
+   case 10:
       result = gen9_init_device_state(device);
       break;
    default:

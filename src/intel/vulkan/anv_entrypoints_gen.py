@@ -183,6 +183,7 @@ TEMPLATE_C = Template(textwrap.dedent(u"""\
        }
 
        switch (devinfo->gen) {
+       case 10:
        case 9:
           if (gen9_layer.entrypoints[index])
              return gen9_layer.entrypoints[index];
