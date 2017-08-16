@@ -679,7 +679,7 @@ static const struct gen_device_info gen_device_info_cfl_gt3 = {
       },                                            \
    }
 
-#define subslices(args...) { args, }
+#define subslices(args...) { args }
 
 #define GEN10_FEATURES(_gt, _slices, _subslices, _l3) \
    GEN8_FEATURES,                                   \
@@ -689,9 +689,25 @@ static const struct gen_device_info gen_device_info_cfl_gt3 = {
    .num_subslices = _subslices,                     \
    .l3_banks = _l3
 
+#define GEN10_LP_FEATURES(_gt, _slices, _subslices, _l3) \
+   GEN10_FEATURES(_gt, _slices, _subslices, _l3),   \
+   .urb = {                                         \
+      .size = 256,                                  \
+      .min_entries = {                              \
+         [MESA_SHADER_VERTEX]    = 64,              \
+         [MESA_SHADER_TESS_EVAL] = 34,              \
+      },                                            \
+      .max_entries = {                              \
+      [MESA_SHADER_VERTEX]       = 1312,            \
+      [MESA_SHADER_TESS_CTRL]    = 296,             \
+      [MESA_SHADER_TESS_EVAL]    = 688,             \
+      [MESA_SHADER_GEOMETRY]     = 272,             \
+      },                                            \
+   }
+
 static const struct gen_device_info gen_device_info_cnl_2x8 = {
    /* GT0.5 */
-   GEN10_FEATURES(1, 1, subslices(2), 2),
+   GEN10_LP_FEATURES(1, 1, subslices(2), 2),
    .is_cannonlake = true,
 };
 
