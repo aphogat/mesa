@@ -1647,6 +1647,8 @@ void brw_emit_post_sync_nonzero_flush(struct brw_context *brw);
 void brw_emit_depth_stall_flushes(struct brw_context *brw);
 void gen7_emit_vs_workaround_flush(struct brw_context *brw);
 void gen7_emit_cs_stall_flush(struct brw_context *brw);
+void gen10_emit_wa_sample_offset_iz_1(struct brw_context *brw);
+void gen10_emit_wa_sample_offset_iz_2(struct brw_context *brw);
 
 /* brw_queryformat.c */
 void brw_query_internal_format(struct gl_context *ctx, GLenum target,

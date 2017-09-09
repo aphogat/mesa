@@ -49,6 +49,11 @@ gen8_emit_3dstate_multisample(struct brw_context *brw, unsigned num_samples)
 void
 gen8_emit_3dstate_sample_pattern(struct brw_context *brw)
 {
+   const struct gen_device_info *devinfo = &brw->screen->devinfo;
+
+   if (devinfo->gen == 10)
+      gen10_emit_wa_sample_offset_iz_1(brw);
+
    BEGIN_BATCH(9);
    OUT_BATCH(_3DSTATE_SAMPLE_PATTERN << 16 | (9 - 2));
 
@@ -68,4 +73,7 @@ gen8_emit_3dstate_sample_pattern(struct brw_context *brw)
    /* 1x and 2x MSAA */
    OUT_BATCH(brw_multisample_positions_1x_2x);
    ADVANCE_BATCH();
+
+   if (devinfo->gen == 10)
+      gen10_emit_wa_sample_offset_iz_2(brw);
 }

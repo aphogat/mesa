@@ -296,6 +296,58 @@ gen7_emit_cs_stall_flush(struct brw_context *brw)
                                brw->workaround_bo, 0, 0);
 }
 
+static void
+brw_flush_write_caches(struct brw_context *brw) {
+   brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CACHE_FLUSH_BITS);
+}
+
+static void
+brw_flush_read_caches(struct brw_context *brw) {
+   brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CACHE_INVALIDATE_BITS);
+}
+
+/**
+ * From Gen10 Workarounds page in h/w specs:
+ * WaSampleOffsetIZ:
+ * Prior to the 3DSTATE_SAMPLE_PATTERN driver must ensure there are no
+ * markers in the pipeline by programming a PIPE_CONTROL with stall.
+ */
+void
+gen10_emit_wa_sample_offset_iz_1(struct brw_context *brw)
+{
+   const struct gen_device_info *devinfo = &brw->screen->devinfo;
+   assert(devinfo->gen == 10);
+   brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
+}
+
+/**
+ * From Gen10 Workarounds page in h/w specs:
+ * WaSampleOffsetIZ:
+ * When 3DSTATE_SAMPLE_PATTERN is programmed, driver must then issue an
+ * MI_LOAD_REGISTER_IMM command to an offset between 0x7000 and 0x7FFF(SVL)
+ * after the command to ensure the state has been delivered prior to any
+ * command causing a marker in the pipeline.
+ */
+void
+gen10_emit_wa_sample_offset_iz_2(struct brw_context *brw)
+{
+   const struct gen_device_info *devinfo = &brw->screen->devinfo;
+   assert(devinfo->gen == 10);
+
+   /* Before changing the value of CACHE_MODE_1 register, GFX pipeline must
+    * be idle; i.e., full flush is required.
+    */
+   brw_flush_write_caches(brw);
+   brw_flush_read_caches(brw);
+
+   /* Write to CACHE_MODE_1 (0x7004) */
+   BEGIN_BATCH(3);
+   OUT_BATCH(MI_LOAD_REGISTER_IMM | (3 - 2));
+   OUT_BATCH(GEN7_CACHE_MODE_1);
+   OUT_BATCH(0);
+   ADVANCE_BATCH();
+}
+
 /**
  * Emits a PIPE_CONTROL with a non-zero post-sync operation, for
  * implementing two workarounds on gen6.  From section 1.4.7.1
