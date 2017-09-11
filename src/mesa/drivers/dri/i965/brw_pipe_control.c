@@ -313,11 +313,13 @@ brw_flush_read_caches(struct brw_context *brw) {
  * markers in the pipeline by programming a PIPE_CONTROL with stall.
  */
 void
-gen10_emit_wa_sample_offset_iz_1(struct brw_context *brw)
+gen10_emit_wa_cs_stall_flush(struct brw_context *brw)
 {
    const struct gen_device_info *devinfo = &brw->screen->devinfo;
    assert(devinfo->gen == 10);
-   brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
+   brw_emit_pipe_control_flush(brw,
+                               PIPE_CONTROL_CS_STALL |
+                               PIPE_CONTROL_STALL_AT_SCOREBOARD);
 }
 
 /**
@@ -329,21 +331,21 @@ gen10_emit_wa_sample_offset_iz_1(struct brw_context *brw)
  * command causing a marker in the pipeline.
  */
 void
-gen10_emit_wa_sample_offset_iz_2(struct brw_context *brw)
+gen10_emit_wa_lri_to_cache_mode_zero(struct brw_context *brw)
 {
    const struct gen_device_info *devinfo = &brw->screen->devinfo;
    assert(devinfo->gen == 10);
 
-   /* Before changing the value of CACHE_MODE_1 register, GFX pipeline must
+   /* Before changing the value of CACHE_MODE_0 register, GFX pipeline must
     * be idle; i.e., full flush is required.
     */
    brw_flush_write_caches(brw);
    brw_flush_read_caches(brw);
 
-   /* Write to CACHE_MODE_1 (0x7004) */
+   /* Write to CACHE_MODE_0 (0x7000) */
    BEGIN_BATCH(3);
    OUT_BATCH(MI_LOAD_REGISTER_IMM | (3 - 2));
-   OUT_BATCH(GEN7_CACHE_MODE_1);
+   OUT_BATCH(GEN7_CACHE_MODE_0);
    OUT_BATCH(0);
    ADVANCE_BATCH();
 }

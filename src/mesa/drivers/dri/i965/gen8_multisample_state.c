@@ -52,7 +52,7 @@ gen8_emit_3dstate_sample_pattern(struct brw_context *brw)
    const struct gen_device_info *devinfo = &brw->screen->devinfo;
 
    if (devinfo->gen == 10)
-      gen10_emit_wa_sample_offset_iz_1(brw);
+      gen10_emit_wa_cs_stall_flush(brw);
 
    BEGIN_BATCH(9);
    OUT_BATCH(_3DSTATE_SAMPLE_PATTERN << 16 | (9 - 2));
@@ -75,5 +75,5 @@ gen8_emit_3dstate_sample_pattern(struct brw_context *brw)
    ADVANCE_BATCH();
 
    if (devinfo->gen == 10)
-      gen10_emit_wa_sample_offset_iz_2(brw);
+      gen10_emit_wa_lri_to_cache_mode_zero(brw);
 }
