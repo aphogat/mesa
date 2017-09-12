@@ -85,6 +85,14 @@ brw_upload_initial_gpu_state(struct brw_context *brw)
       }
    }
 
+   if (devinfo->gen == 10) {
+      BEGIN_BATCH(2);
+      OUT_BATCH(_3DSTATE_3D_MODE  << 16 | (2 - 2));
+      OUT_BATCH(GEN10_FLOAT_BLEND_OPTIMIZATION_ENABLE << 16 |
+                GEN10_FLOAT_BLEND_OPTIMIZATION_ENABLE);
+      ADVANCE_BATCH();
+   }
+
    if (devinfo->gen >= 8) {
       gen8_emit_3dstate_sample_pattern(brw);
 

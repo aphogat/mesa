@@ -1333,6 +1333,9 @@ enum brw_pixel_shader_coverage_mask_mode {
 /* DW2: start address */
 /* DW3: end address. */
 
+#define _3DSTATE_3D_MODE                     0x791E
+# define GEN10_FLOAT_BLEND_OPTIMIZATION_ENABLE (1 << 9)
+
 #define CMD_MI_FLUSH                  0x0200
 
 # define BLT_X_SHIFT					0
