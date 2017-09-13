@@ -34,7 +34,7 @@
 #include "main/state.h"
 
 #include "brw_context.h"
-#if GEN_GEN == 6
+#if GEN_GEN == 6 || GEN_GEN == 10
 #include "brw_defines.h"
 #endif
 #include "brw_draw.h"
@@ -4107,6 +4107,18 @@ genX(upload_cs_state)(struct brw_context *brw)
 
    uint32_t *bind = brw_state_batch(brw, prog_data->binding_table.size_bytes,
                                     32, &stage_state->bind_bo_offset);
+
+#if GEN_GEN == 10
+   /* From the Sky Lake PRM Vol 2a, MEDIA_VFE_STATE:
+    *
+    *    "A stalling PIPE_CONTROL is required before MEDIA_VFE_STATE unless
+    *    the only bits that are changed are scoreboard related: Scoreboard
+    *    Enable, Scoreboard Type, Scoreboard Mask, Scoreboard * Delta. For
+    *    these scoreboard related states, a MEDIA_STATE_FLUSH is
+    *    sufficient."
+    */
+   brw_emit_pipe_control_flush(brw, PIPE_CONTROL_CS_STALL);
+#endif
 
    brw_batch_emit(brw, GENX(MEDIA_VFE_STATE), vfe) {
       if (prog_data->total_scratch) {
