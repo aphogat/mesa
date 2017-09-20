@@ -115,32 +115,14 @@ brw_emit_pipe_control(struct brw_context *brw, uint32_t flags,
       if (devinfo->gen == 8)
          gen8_add_cs_stall_workaround_bits(&flags);
 
-      if (flags & PIPE_CONTROL_VF_CACHE_INVALIDATE) {
-         if (devinfo->gen == 9) {
-            /* The PIPE_CONTROL "VF Cache Invalidation Enable" bit description
-             * lists several workarounds:
-             *
-             * "Projects: SKL, KBL, BXT
-             *  If the VF Cache Invalidation Enable is set to a 1 in a
-             *  PIPE_CONTROL, a separate Null PIPE_CONTROL, all bitfields sets
-             *  to 0, with the VF Cache Invalidation Enable set to 0 needs to
-             *  be sent prior to the PIPE_CONTROL with VF Cache Invalidation
-             *  Enable set to a 1."
-             */
-            brw_emit_pipe_control_flush(brw, 0);
-         }
-
-         if (devinfo->gen >= 8 || devinfo->gen <= 10) {
-            /* "Projects: BDW+
-             *  When VF Cache Invalidate is set “Post Sync Operation” must
-             *  be enabled to “Write Immediate Data” or “Write PS Depth Count”
-             *  or “Write Timestamp”.
-             */
-            brw_emit_pipe_control_write(brw,
-                                        flags | PIPE_CONTROL_WRITE_IMMEDIATE,
-                                        brw->workaround_bo, 0, 0);
-            return;
-         }
+      if (devinfo->gen == 9 &&
+          (flags & PIPE_CONTROL_VF_CACHE_INVALIDATE)) {
+         /* Hardware workaround: SKL
+          *
+          * Emit Pipe Control with all bits set to zero before emitting
+          * a Pipe Control with VF Cache Invalidate set.
+          */
+         brw_emit_pipe_control_flush(brw, 0);
       }
 
       if (devinfo->gen == 10)
