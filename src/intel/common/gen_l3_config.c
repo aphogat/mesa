@@ -257,7 +257,13 @@ gen_get_default_l3_weights(const struct gen_device_info *devinfo,
    w.w[GEN_L3P_SLM] = devinfo->gen < 11 && needs_slm;
    w.w[GEN_L3P_URB] = 1.0;
 
-   if (devinfo->gen >= 8) {
+   if (devinfo->gen == 11) {
+      /* Config#6 recommended by h/w specification causes multiple piglit
+       * regressions. Use config#9 instead which works well. Setting a weight
+       * here so that we get the desired config.
+      */
+      w.w[GEN_L3P_ALL] = 2.0;
+   } else if (devinfo->gen >= 8) {
       w.w[GEN_L3P_ALL] = 1.0;
    } else {
       w.w[GEN_L3P_DC] = needs_dc ? 0.1 : 0;
@@ -277,8 +283,9 @@ gen_get_default_l3_config(const struct gen_device_info *devinfo)
     * default configuration.
     */
    const struct gen_l3_config *const cfg = get_l3_configs(devinfo);
-   assert(cfg == gen_get_l3_config(devinfo,
-                    gen_get_default_l3_weights(devinfo, false, false)));
+   assert(devinfo->gen == 11 ||
+          cfg == gen_get_l3_config(devinfo,
+                  gen_get_default_l3_weights(devinfo, false, false)));
    return cfg;
 }
 
