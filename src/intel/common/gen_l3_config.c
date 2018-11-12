@@ -137,7 +137,7 @@ static const struct gen_l3_config cnl_l3_configs[] = {
  */
 static const struct gen_l3_config icl_l3_configs[] = {
    /* SLM URB ALL DC  RO  IS   C   T */
-   {{  0, 16, 48,  0,  0,  0,  0,  0 }},
+   {{  0, 32, 64,  0,  0,  0,  0,  0 }},
 //   {{  0, 64,  0, 16, 48,  0,  0,  0 }},
 //   {{  0, 48,  0, 16, 64,  0,  0,  0 }},
 //   {{  0, 32,  0,  0, 96,  0,  0,  0 }},
