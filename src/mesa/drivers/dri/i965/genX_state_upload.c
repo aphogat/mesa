@@ -5176,6 +5176,7 @@ genX(update_sampler_state)(struct brw_context *brw,
                            uint32_t *sampler_state)
 {
    struct GENX(SAMPLER_STATE) samp_st = { 0 };
+   struct intel_texture_object *intel_obj = intel_texture_object(texObj);
 
    /* Select min and mip filters. */
    switch (sampler->MinFilter) {
@@ -5285,6 +5286,10 @@ genX(update_sampler_state)(struct brw_context *brw,
    samp_st.AnisotropicAlgorithm =
       samp_st.MinModeFilter == MAPFILTER_ANISOTROPIC ?
       EWAApproximation : LEGACY;
+#endif
+
+#if GEN_GEN >= 11
+    samp_st.TrilinearFilterQuality = intel_obj->is_mipmap_driver_generated ? MED : FULL;
 #endif
 
 #if GEN_GEN >= 6
