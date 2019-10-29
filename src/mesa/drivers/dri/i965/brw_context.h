@@ -373,6 +373,9 @@ struct brw_ff_gs_prog_data {
                             2 + /* shader time, pull constants */       \
                             1 /* cs num work groups */)
 
+
+#define BRW_EFFICIENT_TEX_IMAGE_SIZE_FOR_LOW_QUALITY_TRILINEAR 128
+
 struct brw_cache {
    struct brw_context *brw;
 

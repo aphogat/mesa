@@ -5176,7 +5176,6 @@ genX(update_sampler_state)(struct brw_context *brw,
                            uint32_t *sampler_state)
 {
    struct GENX(SAMPLER_STATE) samp_st = { 0 };
-   struct intel_texture_object *intel_obj = intel_texture_object(texObj);
 
    /* Select min and mip filters. */
    switch (sampler->MinFilter) {
@@ -5289,7 +5288,18 @@ genX(update_sampler_state)(struct brw_context *brw,
 #endif
 
 #if GEN_GEN >= 11
-    samp_st.TrilinearFilterQuality = intel_obj->is_mipmap_driver_generated ? MED : FULL;
+   struct intel_texture_object *intel_obj =
+      intel_texture_object((struct gl_texture_object *)texObj);
+   struct intel_mipmap_tree *mt = intel_obj->mt;
+
+   bool is_texture_big_enough =
+      (mt->surf.logical_level0_px.w >
+       BRW_EFFICIENT_TEX_IMAGE_SIZE_FOR_LOW_QUALITY_TRILINEAR) &&
+      (mt->surf.logical_level0_px.h >
+       BRW_EFFICIENT_TEX_IMAGE_SIZE_FOR_LOW_QUALITY_TRILINEAR);
+   samp_st.TrilinearFilterQuality =
+      (intel_obj->is_mipmap_driver_generated ||
+       (mt->compressed && is_texture_big_enough)) ? MED : FULL;
 #endif
 
 #if GEN_GEN >= 6
