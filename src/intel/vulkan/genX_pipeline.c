@@ -1656,25 +1656,14 @@ emit_3dstate_vs(struct anv_graphics_pipeline *pipeline)
    }
 }
 
-static void
-emit_3dstate_hs_te_ds(struct anv_graphics_pipeline *pipeline,
-                      const VkPipelineTessellationStateCreateInfo *tess_info)
+void
+genX(emit_3dstate_hs)(const struct anv_graphics_pipeline *pipeline)
 {
-   if (!anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL)) {
-      anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_HS), hs);
-      anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_TE), te);
-      anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_DS), ds);
-      return;
-   }
-
+   assert(pipeline);
    const struct gen_device_info *devinfo = &pipeline->base.device->info;
    const struct anv_shader_bin *tcs_bin =
       pipeline->shaders[MESA_SHADER_TESS_CTRL];
-   const struct anv_shader_bin *tes_bin =
-      pipeline->shaders[MESA_SHADER_TESS_EVAL];
-
    const struct brw_tcs_prog_data *tcs_prog_data = get_tcs_prog_data(pipeline);
-   const struct brw_tes_prog_data *tes_prog_data = get_tes_prog_data(pipeline);
 
    anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_HS), hs) {
       hs.Enable = true;
@@ -1724,6 +1713,25 @@ emit_3dstate_hs_te_ds(struct anv_graphics_pipeline *pipeline,
       hs.IncludePrimitiveID = tcs_prog_data->include_primitive_id;
 #endif
    }
+}
+
+static void
+emit_3dstate_hs_te_ds(struct anv_graphics_pipeline *pipeline,
+                      const VkPipelineTessellationStateCreateInfo *tess_info)
+{
+   if (!anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL)) {
+      anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_HS), hs);
+      anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_TE), te);
+      anv_batch_emit(&pipeline->base.batch, GENX(3DSTATE_DS), ds);
+      return;
+   }
+
+   const struct gen_device_info *devinfo = &pipeline->base.device->info;
+   const struct anv_shader_bin *tes_bin =
+      pipeline->shaders[MESA_SHADER_TESS_EVAL];
+   const struct brw_tes_prog_data *tes_prog_data = get_tes_prog_data(pipeline);
+
+   genX(emit_3dstate_hs)(pipeline);
 
    const VkPipelineTessellationDomainOriginStateCreateInfo *domain_origin_state =
       tess_info ? vk_find_struct_const(tess_info, PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO) : NULL;

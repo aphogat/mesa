@@ -6700,6 +6700,16 @@ iris_upload_render_state(struct iris_context *ice,
 
    iris_measure_snapshot(ice, batch, INTEL_SNAPSHOT_DRAW, draw, indirect, sc);
 
+#if GEN_GEN == 12
+   /* GEN:BUG:14011456774
+    *
+    * Insert 3D State HS before every 3D primitive that has HS enabled.
+    */
+   if (ice->shaders.prog[MESA_SHADER_TESS_CTRL] != NULL) {
+      iris_emit_cmd(batch, GENX(3DSTATE_HS), hs);
+   }
+#endif
+
    iris_emit_cmd(batch, GENX(3DPRIMITIVE), prim) {
       prim.VertexAccessType = draw->index_size > 0 ? RANDOM : SEQUENTIAL;
       prim.PredicateEnable = use_predicate;

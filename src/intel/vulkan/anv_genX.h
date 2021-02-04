@@ -113,3 +113,5 @@ void genX(blorp_exec)(struct blorp_batch *batch,
 void genX(cmd_emit_timestamp)(struct anv_batch *batch,
                               struct anv_bo *bo,
                               uint32_t offset);
+
+void genX(emit_3dstate_hs)(const struct anv_graphics_pipeline *pipeline);

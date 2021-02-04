@@ -3810,6 +3810,15 @@ void genX(CmdDraw)(
    if (!pipeline->use_primitive_replication)
       instanceCount *= anv_subpass_view_count(cmd_buffer->state.subpass);
 
+#if GEN_GEN == 12
+   /* GEN:BUG:14011456774
+    *
+    * Insert 3D State HS before every 3D primitive that has HS enabled.
+    */
+   if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+      genX(emit_3dstate_hs)(pipeline);
+#endif
+
    anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
       prim.PredicateEnable          = cmd_buffer->state.conditional_render_enabled;
       prim.VertexAccessType         = SEQUENTIAL;
@@ -3869,6 +3878,12 @@ void genX(CmdDrawIndexed)(
     */
    if (!pipeline->use_primitive_replication)
       instanceCount *= anv_subpass_view_count(cmd_buffer->state.subpass);
+
+#if GEN_GEN == 12
+   /* GEN:BUG:14011456774 */
+   if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+      genX(emit_3dstate_hs)(pipeline);
+#endif
 
    anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
       prim.PredicateEnable          = cmd_buffer->state.conditional_render_enabled;
@@ -3955,6 +3970,12 @@ void genX(CmdDrawIndirectByteCountEXT)(
                     gen_mi_imm(firstInstance));
    gen_mi_store(&b, gen_mi_reg32(GEN7_3DPRIM_BASE_VERTEX), gen_mi_imm(0));
 
+#if GEN_GEN == 12
+   /* GEN:BUG:14011456774 */
+   if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+      genX(emit_3dstate_hs)(pipeline);
+#endif
+
    anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
       prim.IndirectParameterEnable  = true;
       prim.VertexAccessType         = SEQUENTIAL;
@@ -4039,6 +4060,12 @@ void genX(CmdDrawIndirect)(
 
       load_indirect_parameters(cmd_buffer, draw, false);
 
+#if GEN_GEN == 12
+      /* GEN:BUG:14011456774 */
+      if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+         genX(emit_3dstate_hs)(pipeline);
+#endif
+
       anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
          prim.IndirectParameterEnable  = true;
          prim.PredicateEnable          = cmd_buffer->state.conditional_render_enabled;
@@ -4088,6 +4115,12 @@ void genX(CmdDrawIndexedIndirect)(
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
       load_indirect_parameters(cmd_buffer, draw, true);
+
+#if GEN_GEN == 12
+      /* GEN:BUG:14011456774 */
+      if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+         genX(emit_3dstate_hs)(pipeline);
+#endif
 
       anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
          prim.IndirectParameterEnable  = true;
@@ -4244,6 +4277,12 @@ void genX(CmdDrawIndirectCount)(
 
       load_indirect_parameters(cmd_buffer, draw, false);
 
+#if GEN_GEN == 12
+      /* GEN:BUG:14011456774 */
+      if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+         genX(emit_3dstate_hs)(pipeline);
+#endif
+
       anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
          prim.IndirectParameterEnable  = true;
          prim.PredicateEnable          = true;
@@ -4315,6 +4354,12 @@ void genX(CmdDrawIndexedIndirectCount)(
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
       load_indirect_parameters(cmd_buffer, draw, true);
+
+#if GEN_GEN == 12
+      /* GEN:BUG:14011456774 */
+      if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
+         genX(emit_3dstate_hs)(pipeline);
+#endif
 
       anv_batch_emit(&cmd_buffer->batch, GENX(3DPRIMITIVE), prim) {
          prim.IndirectParameterEnable  = true;
